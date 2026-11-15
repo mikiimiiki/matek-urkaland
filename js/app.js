@@ -327,10 +327,21 @@ function explain(v) {
     if (k < t.steps.length) { setActions([btn("primary big", "Tovább ▶", step)]); S.onNext = step; }
     else {
       showCorrect();
-      // ikerfeladat: küldetésben bekerül a tervbe (a pöttyök is mutatják), szabad gyakorlásban rögtön jön
-      if (S.mode === "mission") S.plan.splice(S.idx, 0, { T: t.type, sub: t.sub, lvl: t.lvl, twin: true });
-      const go = S.mode === "mission" ? () => nextTask() : () => nextTask(t);
-      setActions([btn("primary big", "🔁 Próbáld ki egy hasonlóval!", go)]); S.onNext = go;
+      // Ikerfeladat: az első hiba után EGY hasonló feladat kötelező. Ha már az ikerfeladat sem sikerült,
+      // a gyerek választhat: továbblép, vagy még gyakorol egy hasonlóval (nem ragad bele végtelen körbe).
+      // Küldetésben az ikerfeladat bekerül a tervbe (a pöttyök is mutatják), szabad gyakorlásban rögtön jön.
+      const twin = () => {
+        if (S.mode === "mission") { S.plan.splice(S.idx, 0, { T: t.type, sub: t.sub, lvl: t.lvl, twin: true }); nextTask(); }
+        else nextTask(t);
+      };
+      const next = () => nextTask();
+      if (!S.twin) { setActions([btn("primary big", "🔁 Próbáld ki egy hasonlóval!", twin)]); S.onNext = twin; }
+      else {
+        const last = S.mode === "mission" && S.idx >= S.plan.length;
+        setActions([btn("primary big", last ? "Kész! 🏁" : "Következő feladat ▶", next), btn("secondary big", "🔁 Még egy hasonló", twin)]);
+        S.onNext = next;
+        box.append(el("div", "fb hint", "Ez most nehéz volt – semmi baj! Választhatsz: továbbmehetsz, vagy gyakorolhatsz még egy hasonlóval. Ez a feladattípus pár nap múlva úgyis visszajön."));
+      }
     }
     box.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
