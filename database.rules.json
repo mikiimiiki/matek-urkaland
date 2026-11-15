@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "families": {
+      "$fam": {
+        ".read": "auth != null && auth.token.email_verified == true && data.child('members').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+        ".write": "auth != null && auth.token.email_verified == true && data.child('members').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+        "members": {
+          "$em": {
+            ".write": "auth != null && auth.token.email_verified == true && $em == auth.token.email.toLowerCase().replace('.', ',') && newData.val() == true && !data.parent().exists()",
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    },
+    "memberOf": {
+      "$em": {
+        ".read": "auth != null && auth.token.email_verified == true && $em == auth.token.email.toLowerCase().replace('.', ',')",
+        "$fam": {
+          ".write": "auth != null && auth.token.email_verified == true && root.child('families').child($fam).child('members').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    }
+  }
+}

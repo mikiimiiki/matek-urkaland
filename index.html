@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matek Űrkaland</title>
+  <meta name="description" content="Felkészítő a 4. évfolyamosok központi matematika felvételijére">
+  <meta name="theme-color" content="#1e1b4b">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="stars" aria-hidden="true"></div>
+
+  <!-- Felső sáv -->
+  <header class="topbar">
+    <button id="tb-user" class="tb-user" type="button" title="Játékos váltása"><span id="tb-avatar">🧑‍🚀</span> <span id="tb-name">Játékos</span></button>
+    <div class="tb-stats">
+      <span class="pill" title="Üzemanyag (pontok)">⛽ <b id="tb-pts">0</b></span>
+      <span class="pill" title="Napos sorozat">🔥 <b id="tb-streak">0</b></span>
+    </div>
+    <div class="tb-right">
+      <button id="tb-cloud" class="pill btn-pill" type="button" title="Felhős mentés">☁️ <span id="tb-sync">Helyi mód</span></button>
+      <button id="tb-parent" class="pill btn-pill" type="button" title="Szülői felület">👪 Szülő</button>
+    </div>
+  </header>
+
+  <!-- Kezdőképernyő: küldetés + bolygótérkép -->
+  <main id="scr-home" class="screen on">
+    <section class="hero">
+      <div class="mascot" aria-hidden="true">🚀</div>
+      <h1>Matek Űrkaland</h1>
+      <p class="hello" id="home-hello">Szia!</p>
+    </section>
+
+    <section class="mission card" id="mission">
+      <div class="mission-head">
+        <div>
+          <h2>Mai küldetés</h2>
+          <p class="soft" id="mission-sub">10 feladat vagy 15 perc</p>
+        </div>
+        <button id="btn-mission" class="primary big" type="button">🚀 Indítás</button>
+      </div>
+      <div class="bar"><i id="mission-bar"></i></div>
+      <p class="soft small" id="mission-note"></p>
+    </section>
+
+    <section class="rankrow">
+      <div class="card rankbox">
+        <div class="rank-top"><b id="rank-name">Űrkadét</b><span class="soft small" id="rank-next"></span></div>
+        <div class="bar"><i id="rank-bar"></i></div>
+      </div>
+      <div class="card rewardbox" id="reward-box" hidden></div>
+    </section>
+
+    <h2 class="section-title">Bolygók <span class="soft small">– kattints egy bolygóra a szabad gyakorláshoz</span></h2>
+    <section class="map" id="map"></section>
+
+    <h2 class="section-title">Jelvények</h2>
+    <section class="badges" id="badges"></section>
+
+    <p class="pencil">✏️ Tipp: tarts magad mellett füzetet! A felvételin sincs számológép – számolj papíron.</p>
+  </main>
+
+  <!-- Gyakorlás -->
+  <main id="scr-play" class="screen">
+    <div class="play-head">
+      <button id="play-exit" class="ghost" type="button" title="Kilépés">✕ Vissza</button>
+      <div class="play-title" id="play-title">Küldetés</div>
+      <div class="dots" id="play-dots"></div>
+      <button id="play-tts" class="ghost" type="button" title="Felolvasás be/ki" aria-pressed="false">🔇</button>
+    </div>
+    <div class="play-grid">
+      <section class="card task" id="task">
+        <div class="task-meta" id="task-meta"></div>
+        <div class="task-q" id="task-q"></div>
+        <div class="task-viz" id="task-viz"></div>
+        <div class="answer" id="answer"></div>
+        <div class="task-actions" id="task-actions"></div>
+        <p class="pencil small">✏️ Számolj a füzetedben!</p>
+      </section>
+      <aside class="card side" id="side">
+        <div id="side-body" class="side-body">
+          <div class="side-empty">
+            <div class="big-emoji">🧑‍🚀</div>
+            <p>Olvasd el figyelmesen a feladatot!<br>Ha elakadsz, a hiba után itt kapsz segítséget.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Szülői felület -->
+  <main id="scr-parent" class="screen">
+    <div class="play-head">
+      <button id="parent-exit" class="ghost" type="button">✕ Vissza</button>
+      <div class="play-title">Szülői felület</div>
+      <select id="parent-child" aria-label="Gyerek kiválasztása"></select>
+    </div>
+    <div id="parent-body"></div>
+  </main>
+
+  <!-- Felugró ablak, értesítés, konfetti -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true"><div class="modal-box"></div></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

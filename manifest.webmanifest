@@ -1,0 +1,14 @@
+{
+  "name": "Matek Űrkaland",
+  "short_name": "Űrkaland",
+  "description": "Felkészítő a 4. évfolyamosok központi matematika felvételijére",
+  "lang": "hu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1e1b4b",
+  "theme_color": "#1e1b4b",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
