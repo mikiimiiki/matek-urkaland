@@ -25,7 +25,7 @@ function save() { const u = cur(); if (u) u.upd = Date.now(); persist(); if (u) 
 const cloud = createCloud({
   state: () => state, persist, normUser: E.normUser,
   refresh: () => { if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || ""; refreshAll(); },
-  setSync: (t, cls) => { $("tb-sync").textContent = t; $("tb-cloud").className = "pill btn-pill " + (cls || ""); },
+  onStatus: st => { $("tb-cloud-ic").textContent = st.icon; $("tb-sync").textContent = st.text; $("tb-cloud").className = "pill btn-pill " + (st.cls || ""); $("tb-cloud").title = st.detail; renderCloudLive(); },
 });
 
 // ---------- Kis segédek: felugró ablak, értesítés, konfetti, felolvasás ----------
@@ -78,6 +78,7 @@ function refreshAll() {
   renderTop();
   if ($("scr-home").classList.contains("on")) renderHome();
   if ($("scr-parent").classList.contains("on") && parentOpen) { fillChildSelect(); renderParent(); }
+  if (cloudBox && cloudBox.isConnected) { cloudBox.innerHTML = ""; renderCloudInto(cloudBox); }
 }
 function renderTop() {
   const u = cur();
@@ -505,7 +506,19 @@ function renderParent() {
 function saveSettings() { state.settings.upd = Date.now(); persist(); cloud.pushSettings(); refreshAll(); }
 
 // ---------- Felhő panel ----------
+// Élő állapot + eseménynapló: a ☁️ ablakban és a szülői felületen is látszik, és magától frissül
+let cloudBox = null;
+function renderCloudLive() {
+  document.querySelectorAll(".cloud-live").forEach(box => {
+    const st = cloud.status();
+    const ev = cloud.events.slice(-12).reverse();
+    box.innerHTML = `<div class="cl-status ${st.cls || ""}"><span class="cl-ic">${st.icon}</span><div><b>${esc(st.text)}</b><div class="small">${esc(st.detail)}</div></div></div>`
+      + (cloud.ready ? `<div class="small soft">Család: ${esc(cloud.familyCode.slice(0, 7))}… · Feltöltésre vár: ${cloud.pendingCount}</div>` : "")
+      + (ev.length ? `<details class="cl-log"${st.cls === "err" || st.cls === "warn" ? " open" : ""}><summary>Eseménynapló (${ev.length})</summary>${ev.map(e => `<div class="${e.err ? "bad" : ""}"><span class="soft">${new Date(e.t).toLocaleTimeString("hu-HU")}</span> ${e.icon} ${esc(e.text)}</div>`).join("")}</details>` : "");
+  });
+}
 function renderCloudInto(c) {
+  const live = el("div", "cloud-live"); c.append(live);
   const box = el("div");
   if (!cloud.configured) {
     box.innerHTML = `<p>A felhős mentés még nincs beállítva, ezért az adatok <b>csak ebben a böngészőben</b> tárolódnak.</p><p class="soft small">A beállítás lépései a <code>FIREBASE.md</code> fájlban vannak (kb. 15 perc). Utána a szülő Google-fiókkal lép be, és minden eszközön ugyanaz az állás látszik.</p>`;
@@ -524,17 +537,20 @@ function renderCloudInto(c) {
       f.append(btn("secondary", "Hozzáadás", () => cloud.addMember($("cl-mail").value)));
       box.append(el("p", "small", "Másik szülő hozzáadása (a Google-fiókja e-mail-címével):"), f);
     }
-    box.append(btn("ghost", "Kilépés", () => cloud.signOut()));
-    box.lastChild.style.color = "var(--soft)";
+    const tools = el("div", "form-row");
+    if (cloud.ready) tools.append(btn("secondary", "⬆️ Mentés most", () => cloud.flush()));
+    tools.append(btn("secondary", "🔄 Újrakapcsolódás", () => cloud.reconnect()), btn("secondary", "🚪 Kilépés", () => cloud.signOut()));
+    box.append(tools);
   }
   if (cloud.note) box.append(el("p", "small", cloud.note));
   c.append(box);
+  renderCloudLive();
 }
 function openCloud() {
   modal((box, close) => {
     box.append(el("h3", null, "☁️ Felhős mentés"));
-    renderCloudInto(box);
-    const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => close())); box.append(row);
+    cloudBox = el("div"); box.append(cloudBox); renderCloudInto(cloudBox);
+    const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => { cloudBox = null; close(); })); box.append(row);
   });
 }
 

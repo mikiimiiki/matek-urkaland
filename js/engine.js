@@ -22,6 +22,8 @@ export function normUser(u) {
   const d = newUser(u.name || "Játékos");
   u = Object.assign(d, u);
   u.log = arr(u.log); u.badges = arr(u.badges);
+  // régi, ponttal írt kulcsok átalakítása ("T1.kerekites" → "T1:kerekites")
+  Object.keys(u.subs).forEach(k => { if (k.includes(".")) { u.subs[k.replace(".", ":")] = u.subs[k]; delete u.subs[k]; } });
   Object.values(u.subs).forEach(s => { s.last = arr(s.last); });
   u.streak = Object.assign({ n: 0, last: -1, best: 0 }, u.streak);
   return u;
@@ -30,7 +32,8 @@ export function normUser(u) {
 // ---- Típus szintje és csillagai ----
 export const typeState = (u, T) => (u.types[T] = u.types[T] || { stars: 0, run: 0 });
 export const typeLvl = (u, T) => Math.min(3, typeState(u, T).stars + 1);
-export const subKey = (T, s) => `${T}.${s}`;
+// A kulcsban nem lehet pont: a Firebase Realtime Database tiltja (. $ # [ ] /), ezért kettőspontot használunk
+export const subKey = (T, s) => `${T}:${s}`;
 export const subState = (u, T, s) => (u.subs[subKey(T, s)] = u.subs[subKey(T, s)] || { n: 0, ok: 0, box: 0, due: 0, last: [] });
 export const subAcc = st => st.last.length ? st.last.reduce((a, b) => a + b, 0) / st.last.length : null;
 
@@ -59,9 +62,9 @@ export function planMission(u, rng, n = 10, today = dayNum()) {
   const plan = [];
   // ismétlés: esedékes altípusok, a legrégebben esedékes elöl
   const due = Object.entries(u.subs).filter(([, s]) => s.n && s.due && s.due <= today).sort((a, b) => a[1].due - b[1].due);
-  due.slice(0, nReview).forEach(([k]) => { const [T, s] = k.split("."); if (typeById(T)) plan.push({ T, sub: s, kind: "review" }); });
+  due.slice(0, nReview).forEach(([k]) => { const [T, s] = k.split(":"); if (typeById(T)) plan.push({ T, sub: s, kind: "review" }); });
   // fókusz: a kevesebb csillagos típusok nagyobb eséllyel
-  const fw = TYPES.map(T => 4 - typeState(u, T.id).stars + (Object.keys(u.subs).some(k => k.startsWith(T.id + ".")) ? 0 : 1));
+  const fw = TYPES.map(T => 4 - typeState(u, T.id).stars + (Object.keys(u.subs).some(k => k.startsWith(T.id + ":")) ? 0 : 1));
   const pickType = ws => { let r = rng.next() * ws.reduce((a, b) => a + b, 0); for (let i = 0; i < TYPES.length; i++) { r -= ws[i]; if (r <= 0) return TYPES[i]; } return TYPES[0]; };
   while (plan.length < nReview + nFocus) { const T = pickType(fw); plan.push({ T: T.id, sub: pickSub(u, T, typeLvl(u, T.id), rng), kind: "focus" }); }
   // meglepetés: a legtöbb csillagos típusból
