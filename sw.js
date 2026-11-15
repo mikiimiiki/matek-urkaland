@@ -1,6 +1,6 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v4";
+const VERSION = "urkaland-v5";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/app.js", "js/engine.js", "js/check.js", "js/util.js", "js/cloud.js", "js/firebase-config.js",

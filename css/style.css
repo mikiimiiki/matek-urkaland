@@ -39,6 +39,10 @@ h1, h2, h3 { margin: 0; }
 .secondary { background: var(--pri-soft); color: var(--pri); box-shadow: 0 4px 0 #ddd6fe; }
 .ghost { background: rgba(255,255,255,.12); color: #fff; }
 .ok-btn { background: var(--ok); box-shadow: 0 4px 0 #15803d; }
+/* automatikus továbblépés: a gomb alján egy sáv fut végig */
+.primary.auto { position: relative; overflow: hidden; }
+.primary.auto::after { content: ""; position: absolute; left: 0; bottom: 0; height: 5px; width: 100%; background: rgba(255,255,255,.75); transform-origin: left; animation: autobar var(--auto, 1500ms) linear forwards; }
+@keyframes autobar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 /* --- Felső sáv --- */
 .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(11,16,38,.82); backdrop-filter: blur(8px); color: #fff; flex-wrap: wrap; }

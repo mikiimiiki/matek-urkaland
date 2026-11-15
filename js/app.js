@@ -184,6 +184,7 @@ function nextTask(twinOf = null) {
   const T = typeById(item.T);
   const lvl = item.lvl || E.typeLvl(u, T.id);
   const task = makeTask(T, item.sub, lvl, rng);
+  clearTimeout(S.autoT);
   S.task = task; S.twin = !!item.twin; S.tries = 0; S.t0 = Date.now(); S.phase = "answer"; S.sel = []; S.set = []; S.lastInput = null; S.firstWrong = null; S.clicked = null; S.onNext = null;
   renderTask();
 }
@@ -229,7 +230,7 @@ function renderAnswer() {
     const row = el("div", "ans-row"), i = numInput();
     row.append(i); if (A.unit) row.append(el("span", "unit", esc(A.unit)));
     box.append(row, numpad());
-    i.addEventListener("keydown", e => { if (e.key === "Enter") onEnter(); });
+    i.addEventListener("keydown", e => { if (e.key === "Enter") onEnter(e); });
     S.read = () => parseNum(i.value); S.inputs = [i];
     setTimeout(() => i.focus(), 30);
   } else if (A.kind === "time") {
@@ -238,7 +239,7 @@ function renderAnswer() {
     row.append(h, el("span", "unit", "óra"), m, el("span", "unit", "perc"));
     box.append(row, numpad());
     h.addEventListener("input", () => { if (h.value.length >= 2) m.focus(); });
-    [h, m].forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") onEnter(); if (e.key === ":" || e.key === ".") { e.preventDefault(); m.focus(); } }));
+    [h, m].forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") onEnter(e); if (e.key === ":" || e.key === ".") { e.preventDefault(); m.focus(); } }));
     S.read = () => { const hh = parseNum(h.value), mm = m.value.trim() === "" ? 0 : parseNum(m.value); return hh == null || mm == null || mm > 59 || hh > 24 ? null : hh * 60 + mm; };
     S.inputs = [h, m];
     setTimeout(() => h.focus(), 30);
@@ -257,14 +258,16 @@ function renderAnswer() {
     const drawChips = () => { chips.innerHTML = ""; S.set.forEach(v => { const c = el("span", "chip", String(v)); c.append(btn("", "✕", () => { S.set = S.set.filter(x => x !== v); drawChips(); })); chips.append(c); }); if (!S.set.length) chips.append(el("span", "soft small", "Ide kerülnek a beírt számok.")); };
     row.append(i, btn("secondary", "➕ Hozzáad", add));
     box.append(el("p", "soft small", "Írj be egy számot, és nyomd meg a Hozzáad gombot (vagy az Entert). Az összes megoldást add meg!"), row, chips, numpad());
-    i.addEventListener("keydown", e => { if (e.key === "Enter") { if (!add()) onEnter(); } });
+    i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (!add()) onEnter(e); } });
     drawChips();
     S.read = () => { if (i.value.trim()) add(); return S.set.length ? S.set.slice() : null; };
     S.inputs = [i];
     setTimeout(() => i.focus(), 30);
   }
 }
-function onEnter() { if (S.phase === "answer") check(); else if (S.onNext) S.onNext(); }
+// Az ellenőrzést kiváltó Enter-leütést "elfogyasztjuk" (preventDefault), így ugyanaz a leütés
+// nem nyomja meg rögtön a Tovább gombot is – a gyerek látja a visszajelzést.
+function onEnter(e) { if (e) e.preventDefault(); if (S.phase === "answer") check(); else if (S.onNext && Date.now() >= (S.lockUntil || 0)) S.onNext(); }
 
 // --- Ellenőrzés és visszajelzés ---
 const PRAISE = ["Szuper! 🚀", "Telitalálat! ⭐", "Pontos landolás! 🛬", "Csillagos ötös! 🌟", "Így kell ezt! 💪", "Hibátlan! 🎯"];
@@ -297,12 +300,12 @@ function correct() {
   const ev = E.record(u, t, rr, Date.now() - S.t0, logOpts(t, rr === 2 ? S.firstWrong : null));
   S.res.push(rr); if (S.mode === "mission") S.idx++;
   save(); renderTop(); renderDots();
-  const praise = PRAISE[rng.int(0, PRAISE.length - 1)];
-  $("side-body").innerHTML = `<div class="fb ok"><div class="fb-title">${praise}</div>${rr === 1 ? "Elsőre sikerült!" : "A tipp után sikerült – ügyes!"} <b>+${ev.pts} ⛽</b>${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
+  const praise = rr === 1 ? PRAISE[rng.int(0, PRAISE.length - 1)] : "Javítottad! ✔️";
+  $("side-body").innerHTML = `<div class="fb ok"><div class="fb-title">${praise}</div>${rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(correctText(t.ans))}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ⛽</b>${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
   if (rr === 2) $("side-body").append(btn("secondary", "👀 Megnézem a megoldást", () => { $("side-body").append(stepsAll(t)); }));
   if (ttsOn) speak(praise);
   afterEvents(ev);
-  nextButton();
+  nextButton(rr === 1);
 }
 function explain(v) {
   const t = S.task, u = cur();
@@ -320,6 +323,7 @@ function explain(v) {
   let k = 0;
   const step = () => {
     box.append(el("div", "step", t.steps[k])); if (ttsOn) speak(t.steps[k]); k++;
+    S.lockUntil = Date.now() + 400;
     if (k < t.steps.length) { setActions([btn("primary big", "Tovább ▶", step)]); S.onNext = step; }
     else {
       showCorrect();
@@ -341,11 +345,21 @@ function showCorrect() {
 }
 function stepsAll(t) { const box = el("div", "steps"); t.steps.forEach(s => box.append(el("div", "step", s))); return box; }
 function logOpts(t, v) { return { twin: S.twin, q: speechText(t.q).slice(0, 220), a: v == null ? "" : answerText(t.ans, v), c: correctText(t.ans), w: (() => { try { return v != null && t.why ? plain(t.why(v) || "") : ""; } catch { return ""; } })() }; }
-function nextButton() {
+// auto = elsőre jó válasz: 1,5 mp múlva magától továbblép (a gombon egy sáv mutatja az időt).
+// Javított válasz után nem lép tovább magától – a gyerek nyugodtan megnézheti, mi lett a jó megoldás.
+const AUTO_NEXT_MS = 1500;
+function nextButton(auto = false) {
   // a S.idx már a következőre mutat
   const last = S.mode === "mission" && S.idx >= S.plan.length;
-  const go = () => nextTask();
-  setActions([btn("primary big", last ? "Kész! 🏁" : "Tovább ▶", go)]); S.onNext = go;
+  const t = S.task;
+  const go = () => { clearTimeout(S.autoT); nextTask(); };
+  const b = btn("primary big" + (auto ? " auto" : ""), last ? "Kész! 🏁" : "Tovább ▶", go);
+  if (auto) b.style.setProperty("--auto", AUTO_NEXT_MS + "ms");
+  setActions([b]); S.onNext = go;
+  S.lockUntil = Date.now() + 400;
+  clearTimeout(S.autoT);
+  // ha közben felugró ablak jön (pl. küldetés teljesítve), nem lépünk tovább magától
+  if (auto) S.autoT = setTimeout(() => { if (S && S.task === t && S.phase === "done" && !$("modal").classList.contains("on")) go(); }, AUTO_NEXT_MS);
 }
 function afterEvents(ev) {
   const u = cur();
@@ -375,7 +389,7 @@ function endRound() {
   toast(`Kör vége: ${ok}/${S.res.length} elsőre jó. 🚀`);
   goHome();
 }
-function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); S = null; show("scr-home"); renderTop(); renderHome(); }
+function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); }
 
 // ---------- Szülői felület ----------
 let parentOpen = false;
@@ -566,7 +580,7 @@ $("play-exit").addEventListener("click", goHome);
 $("parent-exit").addEventListener("click", () => { parentOpen = false; goHome(); });
 $("parent-child").addEventListener("change", renderParent);
 $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if (ttsOn && S && S.task) speak(S.task.q); else if ("speechSynthesis" in window) speechSynthesis.cancel(); });
-document.addEventListener("keydown", e => { if (e.key === "Enter" && S && S.phase !== "answer" && S.onNext && !$("modal").classList.contains("on") && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); S.onNext(); } });
+document.addEventListener("keydown", e => { if (e.key === "Enter" && !e.defaultPrevented && !e.repeat && S && S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0) && !$("modal").classList.contains("on") && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); S.onNext(); } });
 
 // Tesztelési segéd: a #debug címmel megnyitva a konzolból elérhető az aktuális kör
 if (location.hash === "#debug") window.__urk = { S: () => S, state: () => state, show: (T, sub, lvl) => { S = S || { mode: "free", T, plan: [], idx: 0, res: [] }; S.T = T; show("scr-play"); const t = makeTask(typeById(T), sub, lvl, rng); S.task = t; S.twin = false; S.tries = 0; S.t0 = Date.now(); S.phase = "answer"; S.sel = []; S.set = []; S.clicked = null; renderTask(); } };
