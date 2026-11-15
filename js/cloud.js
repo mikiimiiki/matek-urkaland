@@ -34,7 +34,10 @@ export function createCloud(api) {
 
   async function signIn() {
     if (!fa) return;
-    try { await fa.signInWithPopup(auth, new fa.GoogleAuthProvider()); }
+    // A fiókválasztó mindig jelenjen meg – különben a böngészőbe épp bejelentkezett (pl. a gyerek) fiókja lép be kérdés nélkül
+    const provider = new fa.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try { await fa.signInWithPopup(auth, provider); }
     catch (e) { note = "❌ A belépés nem sikerült: " + (e.code || e.message); api.refresh(); }
   }
   async function signOut() { if (fa) { flush(); await fa.signOut(auth); } }
