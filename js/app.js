@@ -29,26 +29,31 @@ const cloud = createCloud({
 });
 
 // ---------- Kis segédek: felugró ablak, értesítés, konfetti, felolvasás ----------
-function modal(build, { onClose } = {}) {
+// esc: mit csináljon az Esc gomb, amíg az ablak nyitva van (alapból bezárja, mint a Mégse);
+// esc: false → az ablakot nem lehet Esc-kel bezárni (pl. az első játékos nevét kötelező megadni)
+let modalEsc = null;
+function modal(build, { onClose, esc } = {}) {
   const m = $("modal"), box = m.firstElementChild;
-  box.innerHTML = "";
-  const close = v => { m.classList.remove("on"); if (onClose) onClose(v); };
+  box.innerHTML = ""; box.className = "modal-box";
+  const close = v => { m.classList.remove("on"); modalEsc = null; if (onClose) onClose(v); };
   build(box, close);
+  modalEsc = esc === false ? false : () => (esc ? esc(close) : close());
   m.classList.add("on");
   const f = box.querySelector("input, button.primary"); if (f) setTimeout(() => f.focus(), 30);
   return close;
 }
 function ask({ title, text = "", value = null, ok = "OK", cancel = "Mégse", secret = false, type = "text" }) {
-  return new Promise(res => modal((box, close) => {
+  let resolve;
+  return new Promise(res => { resolve = res; modal((box, close) => {
     box.append(el("h3", null, esc(title)));
     if (text) box.append(el("p", null, text));
     let inp = null;
-    if (value !== null) { inp = el("input", "minp"); inp.value = value; inp.type = secret ? "password" : type; if (secret) inp.inputMode = "numeric"; box.append(inp); inp.addEventListener("keydown", e => { if (e.key === "Enter") { close(); res(inp.value); } if (e.key === "Escape") { close(); res(null); } }); }
+    if (value !== null) { inp = el("input", "minp"); inp.value = value; inp.type = secret ? "password" : type; if (secret) inp.inputMode = "numeric"; box.append(inp); inp.addEventListener("keydown", e => { if (e.key === "Enter") { close(); res(inp.value); } }); }
     const row = el("div", "mbtns");
     if (cancel) row.append(btn("secondary", cancel, () => { close(); res(null); }));
     row.append(btn("primary", ok, () => { close(); res(inp ? inp.value : true); }));
     box.append(row);
-  }));
+  }, { esc: close => { close(); resolve(null); } }); });
 }
 let toastT;
 function toast(msg, ms = 2800) { const t = $("toast"); t.innerHTML = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
@@ -147,7 +152,7 @@ function newPlayer(first = false) {
     if (!first) row.append(btn("secondary", "Mégse", () => close()));
     row.append(btn("primary", "Indulás! 🚀", go));
     box.append(row);
-  });
+  }, { esc: first ? false : undefined });
 }
 function switchPlayer() {
   modal((box, close) => {
@@ -473,7 +478,7 @@ function endRound() {
     const row = el("div", "mbtns"); row.style.justifyContent = "center";
     row.append(btn("secondary", "Vissza a térképre", () => { close(); goHome(); }), btn("primary", "🔁 Még egy kör", () => { close(); startFree(T); }));
     box.append(row);
-  });
+  }, { esc: close => { close(); goHome(); } });
 }
 function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); }
 
@@ -653,7 +658,7 @@ function openCloud() {
     box.append(el("h3", null, "☁️ Felhős mentés"));
     cloudBox = el("div"); box.append(cloudBox); renderCloudInto(cloudBox);
     const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => { cloudBox = null; close(); })); box.append(row);
-  });
+  }, { esc: close => { cloudBox = null; close(); } });
 }
 
 // ---------- Felolvasás gomb ----------
@@ -668,6 +673,15 @@ $("play-exit").addEventListener("click", goHome);
 $("parent-exit").addEventListener("click", () => { parentOpen = false; goHome(); });
 $("parent-child").addEventListener("change", renderParent);
 $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if (ttsOn && S && S.task) speak(S.task.q); else if ("speechSynthesis" in window) speechSynthesis.cancel(); });
+// Esc: ha felugró ablak van nyitva, azt zárja be (mint a Mégse) – a képernyő marad;
+// különben bármelyik képernyőről (feladat, magyarázat, szülői felület) a főmenübe visz.
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || e.repeat) return;
+  e.preventDefault();
+  if ($("modal").classList.contains("on")) { if (modalEsc) modalEsc(); return; }
+  if ($("scr-parent").classList.contains("on")) { parentOpen = false; goHome(); }
+  else if ($("scr-play").classList.contains("on")) goHome();
+});
 document.addEventListener("keydown", e => { if (e.key === "Enter" && !e.defaultPrevented && !e.repeat && S && S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0) && !$("modal").classList.contains("on") && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); S.onNext(); } });
 
 // Tesztelési segéd: a #debug címmel megnyitva a konzolból elérhető az aktuális kör
