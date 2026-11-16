@@ -7,13 +7,13 @@ import T8 from "./t8_minta.js";
 import T4 from "./t4_ido.js";
 import T6 from "./t6_kombinatorika.js";
 import T10 from "./t10_szoveges.js";
+import T9 from "./t9_penz.js";
 
-export const TYPES = [T1, T3, T5, T8, T4, T6, T10];
+export const TYPES = [T1, T3, T5, T8, T4, T6, T10, T9];
 
 // Még nem elkészült típusok – a térképen szürke, "hamarosan" bolygóként jelennek meg
 export const COMING = [
   { id: "T2", name: "Műveletek", emoji: "➗" },
-  { id: "T9", name: "Pénz", emoji: "💰" },
   { id: "T13", name: "Szabálykeresés", emoji: "🔍" },
   { id: "T7", name: "Logika", emoji: "🧩" },
   { id: "T12", name: "Síkidomok", emoji: "📐" },
