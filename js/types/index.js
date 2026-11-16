@@ -11,13 +11,13 @@ import T9 from "./t9_penz.js";
 import T13 from "./t13_szabaly.js";
 import T2 from "./t2_muveletek.js";
 import T7 from "./t7_logika.js";
+import T12 from "./t12_sikidomok.js";
+import T11 from "./t11_kockak.js";
 
-export const TYPES = [T1, T2, T3, T5, T8, T4, T6, T10, T9, T13, T7];
+export const TYPES = [T1, T2, T3, T5, T8, T4, T6, T10, T9, T13, T7, T12, T11];
 
 // Még nem elkészült típusok – a térképen szürke, "hamarosan" bolygóként jelennek meg
 export const COMING = [
-  { id: "T12", name: "Síkidomok", emoji: "📐" },
-  { id: "T11", name: "Kockaépítmények", emoji: "🧊" },
 ];
 
 export const typeById = id => TYPES.find(t => t.id === id);
