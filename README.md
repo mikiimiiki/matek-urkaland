@@ -5,7 +5,7 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 
 ## Mit tud (1. ütem)
 
-- **8 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
+- **9 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
   - 🪐 Számok tulajdonságai: kerekítés, számszomszédok, helyi érték, számkártyák, „találd ki a számot”
   - 🌕 Mértékegységek: átváltás, vegyes alak, pótlás, becslés
   - 📊 Diagramok: leolvasás, különbség, összeg, legnagyobb/legkisebb, „között van”, hányszor annyi, középső, igaz/hamis
@@ -13,6 +13,7 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
   - ⏰ Idő: óra leolvasása, eltelt idő, érkezés/indulás, menetrend, naptár
   - 📖 Szöveges feladatok: összeg és különbség, „többször annyi”, életkor, csomagolási lánc, fák/oszlopok/vágások (eggyel kevesebb köz), lépcsőzés, csere, mérleg – szalagmodelles (szakaszos) ábrával
   - 💰 Pénz és vásárlás: persely összeszámolása, visszajáró pénz (felfelé számolás a számegyenesen), legkevesebb érme, legfeljebb hány darab, egy darab ára, akció (2 után a 3. ajándék), parkolási díj, spórolás – érme- és bankjegyrajzokkal
+  - 🛰️ Szabálykeresés: X–Y táblázat (hiányzó szám előre és visszafelé, melyik szabály illik minden oszlophoz – a 3. szinten több egyenértékű szabály is, mint 2026-ban –, találd ki a szabályt), „minden nap 3-mal többet” sorozatok (n-edik nap, hányadik nap, összeg, a hét melyik napja), számsorozatok
   - 🎲 Kombinatorika: „sorold fel az összes lehetőséget” – választás (sorrend nem számít), tornyok és zászlók feltételekkel, öltöztetés/menü, útvonalak ábrán, számok kártyákból, „hányféleképpen?”. A gyerek betűgombokkal rakja ki a lehetőségeket, a hibás (felesleges) lehetőséget a program megjelöli és megindokolja.
 - **Hibakezelés:** első hibánál tipp, a második hibánál lépésenkénti, képes magyarázat. Ilyenkor a gyerek a saját válaszát is látja, a felismert hibával együtt („úgy számoltál, mintha egy órában 100 perc lenne”). Utána ikerfeladat jön, a hibás típus pedig 1, 3 és 7 nap múlva visszatér.
 - **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás és pontlevonás nincs.
@@ -55,6 +56,6 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Következő ütemek
 
-- 2. hullám: műveletek, szabálykeresés, logika
+- 2. hullám: műveletek, logika
 - Próbafelvételi mód: 45 perc, az eredeti feladatsorokkal, a javítási útmutató szerinti pontozással
 - 3. hullám: síkidomok, kockaépítmények, biztos/lehetséges/lehetetlen, halmazábra
