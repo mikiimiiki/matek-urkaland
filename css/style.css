@@ -91,6 +91,16 @@ h1 { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #c4b5
 .planet .pstars .off { opacity: .25; }
 .planet .plvl { font-size: 13px; color: #c7d2fe; }
 .planet.locked { opacity: .45; cursor: default; }
+/* billentyűzettel kijelölt bolygó / küldetés gomb */
+.planet:focus-visible { outline: 4px solid #facc15; outline-offset: 3px; transform: translateY(-4px) scale(1.04); background: rgba(255,255,255,.18); }
+#btn-mission:focus-visible { outline: 4px solid #facc15; outline-offset: 4px; }
+.keys-hint { color: #c7d2fe; text-align: center; font-size: 14px; margin: 12px 0 0; }
+.keys-hint b { color: #fde68a; }
+.help-info p { margin: 8px 0; line-height: 1.5; }
+.help-info .ex { background: var(--pri-soft); border-radius: 12px; padding: 8px 12px; font-weight: 700; }
+.help-list button { display: flex; width: 100%; gap: 10px; align-items: center; border: 0; background: #f8fafc; border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; text-align: left; font-weight: 800; }
+.help-list button:focus-visible, .help-list button:hover { background: var(--pri-soft); }
+.help-list .soft { font-weight: 600; }
 .planet.locked:hover { transform: none; }
 .badges { display: flex; flex-wrap: wrap; gap: 10px; }
 .badge { background: rgba(255,255,255,.1); color: #fff; border-radius: 14px; padding: 8px 12px; font-weight: 700; font-size: 15px; }

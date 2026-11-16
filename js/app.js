@@ -4,6 +4,7 @@ import { makeRng, plain, esc } from "./util.js";
 import { checkAnswer, parseNum, answerText, correctText, comboKey } from "./check.js";
 import * as E from "./engine.js";
 import { createCloud } from "./cloud.js";
+import { PLANET_INFO } from "./planet-info.js";
 
 const $ = id => document.getElementById(id);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -122,6 +123,7 @@ function renderHome() {
   TYPES.forEach(T => {
     const ts = E.typeState(u, T.id), lvl = E.typeLvl(u, T.id);
     const b = btn("planet", `<div class="orb" style="background:${T.planet.color};--glow:${T.planet.color}">${T.planet.emoji}</div><div class="pname">${T.planet.name}</div><div class="ptype">${T.name}</div><div class="pstars">${[1, 2, 3].map(i => `<span class="${ts.stars >= i ? "" : "off"}">⭐</span>`).join("")}</div><div class="plvl">${ts.stars >= 3 ? "Mester! 👑" : `${lvl}. szint · még ${3 - ts.run} jó válasz a csillagig`}</div>`, () => startFree(T));
+    b.dataset.type = T.id; b.title = `${T.planet.name} – ${T.name} (Enter: indulás, F1: mi vár itt?)`;
     map.append(b);
   });
   COMING.forEach(c => map.append(el("div", "planet locked", `<div class="orb" style="background:#475569;--glow:transparent">${c.emoji}</div><div class="pname">${c.name}</div><div class="ptype">🔒 hamarosan</div>`)));
@@ -661,6 +663,40 @@ function openCloud() {
   }, { esc: close => { cloudBox = null; close(); } });
 }
 
+// ---------- Súgó (F1): mi vár a bolygón? ----------
+function planetHelp(T, fromHome) {
+  const I = PLANET_INFO[T.id] || {};
+  modal((box, close) => {
+    box.classList.add("help-info");
+    box.append(el("h3", null, `${T.planet.emoji} ${T.planet.name}`), el("p", "soft", `<b>${esc(T.name)}</b>`));
+    box.append(el("p", null, esc(I.about || "")));
+    box.append(el("p", null, `<b>Ilyen feladatok várnak:</b> ${T.subs.map(s => esc(s.name)).join(" · ")}`));
+    if (I.example) box.append(el("p", "ex", `Például: ${esc(I.example)}`));
+    if (I.tip) box.append(el("p", null, `💡 <b>Tipp:</b> ${esc(I.tip)}`));
+    const row = el("div", "mbtns");
+    row.append(btn("secondary", "Bezár", () => close()));
+    if (fromHome) row.append(btn("primary", `🚀 Indulás (${freeSize()} feladat)`, () => { close(); startFree(T); }));
+    box.append(row);
+  });
+}
+function overviewHelp() {
+  modal((box, close) => {
+    box.append(el("h3", null, "❓ Mi vár a bolygókon?"));
+    box.append(el("p", "soft small", "Kattints egy bolygóra (vagy lépj rá Tab-bal, és nyomd meg az Entert), hogy megtudd, milyen feladatok várnak ott!"));
+    const list = el("div", "help-list");
+    TYPES.forEach(T => list.append(btn("", `<span style="font-size:24px">${T.planet.emoji}</span><span>${T.planet.name}<br><span class="soft small">${esc(T.name)}</span></span>`, () => { close(); planetHelp(T, $("scr-home").classList.contains("on")); })));
+    box.append(list);
+    box.append(el("p", "small", "⌨️ <b>Tab</b> / <b>Shift+Tab</b>: lépés · <b>Enter</b>: indulás · <b>F1</b>: súgó · <b>Esc</b>: vissza a főmenübe"));
+    const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => close())); box.append(row);
+  });
+}
+function openHelp() {
+  if ($("scr-play").classList.contains("on") && S && S.task) return planetHelp(typeById(S.task.type), false);
+  const a = document.activeElement, t = a && a.dataset && a.dataset.type;
+  if ($("scr-home").classList.contains("on") && t) return planetHelp(typeById(t), true);
+  overviewHelp();
+}
+
 // ---------- Felolvasás gomb ----------
 function updTtsBtn() { const b = $("play-tts"); b.textContent = ttsOn ? "🔊" : "🔇"; b.setAttribute("aria-pressed", ttsOn); b.title = ttsOn ? "Felolvasás bekapcsolva" : "Felolvasás kikapcsolva"; }
 
@@ -669,10 +705,24 @@ $("btn-mission").addEventListener("click", startMission);
 $("tb-user").addEventListener("click", switchPlayer);
 $("tb-parent").addEventListener("click", openParent);
 $("tb-cloud").addEventListener("click", openCloud);
+$("tb-help").addEventListener("click", openHelp);
 $("play-exit").addEventListener("click", goHome);
 $("parent-exit").addEventListener("click", () => { parentOpen = false; goHome(); });
 $("parent-child").addEventListener("change", renderParent);
 $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if (ttsOn && S && S.task) speak(S.task.q); else if ("speechSynthesis" in window) speechSynthesis.cancel(); });
+// Billentyűzet a kezdőképernyőn: Tab / Shift+Tab a küldetés gomb és a bolygók között lép (körbe-körbe),
+// Enter elindítja a kijelöltet (a gomb saját Enter-kezelése). F1: súgó a kijelölt bolygóról.
+document.addEventListener("keydown", e => {
+  if (e.key === "F1") { e.preventDefault(); if (!$("modal").classList.contains("on")) openHelp(); return; }
+  if (e.key !== "Tab" || $("modal").classList.contains("on") || !$("scr-home").classList.contains("on")) return;
+  const items = [$("btn-mission"), ...document.querySelectorAll("#map button.planet")];
+  if (!items.length) return;
+  e.preventDefault();
+  const i = items.indexOf(document.activeElement);
+  const next = i < 0 ? (e.shiftKey ? items.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + items.length) % items.length;
+  items[next].focus();
+  items[next].scrollIntoView({ block: "nearest", behavior: "smooth" });
+});
 // Esc: ha felugró ablak van nyitva, azt zárja be (mint a Mégse) – a képernyő marad;
 // különben bármelyik képernyőről (feladat, magyarázat, szülői felület) a főmenübe visz.
 document.addEventListener("keydown", e => {

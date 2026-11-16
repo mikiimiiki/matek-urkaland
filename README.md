@@ -26,6 +26,8 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 - **Szabad gyakorlás:** a térképen egy bolygóra kattintva rögzített hosszú kör indul abból a típusból (3, 5 vagy 10 feladat – a szülői felületen állítható); az üres karikák már az elején mutatják, hány feladat lesz, a kör végén összegzés.
 - **Napi küldetés:** 10 feladat vagy 15 perc. Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés.
 - **Szülői felület (PIN-nel):** heti összefoglaló, színes térkép arról, miben erős a gyerek és min kell még dolgozni, hibanapló, jutalmak, napi cél, profilok, felhős mentés.
+- **Billentyűzet a kezdőképernyőn:** Tab / Shift+Tab lép a küldetés gomb és a bolygók között (körbe), Enter elindítja a kijelöltet.
+- **Súgó (F1 vagy ❓):** gyerekeknek szóló leírás a kijelölt bolygóról (mit gyakorol ott, példafeladat, tipp), kijelölés nélkül áttekintés mind a 15 bolygóról; gyakorlás közben az aktuális bolygóról.
 - **Esc gomb:** ha felugró ablak van nyitva, bezárja (mint a Mégse); egyébként bármelyik képernyőről (feladat, magyarázat, szülői felület) a főmenübe visz. Az első játékos nevét nem lehet Esc-kel átugrani.
 - **Felolvasás** (🔊, alapból kikapcsolva) a böngésző magyar hangjával.
 
