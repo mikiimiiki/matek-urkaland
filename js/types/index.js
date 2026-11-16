@@ -13,8 +13,10 @@ import T2 from "./t2_muveletek.js";
 import T7 from "./t7_logika.js";
 import T12 from "./t12_sikidomok.js";
 import T11 from "./t11_kockak.js";
+import T14 from "./t14_lehetseges.js";
+import T15 from "./t15_halmaz.js";
 
-export const TYPES = [T1, T2, T3, T5, T8, T4, T6, T10, T9, T13, T7, T12, T11];
+export const TYPES = [T1, T2, T3, T5, T8, T4, T6, T10, T9, T13, T7, T12, T11, T14, T15];
 
 // Még nem elkészült típusok – a térképen szürke, "hamarosan" bolygóként jelennek meg
 export const COMING = [
