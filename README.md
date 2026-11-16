@@ -5,12 +5,13 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 
 ## Mit tud (1. ütem)
 
-- **5 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
+- **6 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
   - 🪐 Számok tulajdonságai: kerekítés, számszomszédok, helyi érték, számkártyák, „találd ki a számot”
   - 🌕 Mértékegységek: átváltás, vegyes alak, pótlás, becslés
   - 📊 Diagramok: leolvasás, különbség, összeg, legnagyobb/legkisebb, „között van”, hányszor annyi, középső, igaz/hamis
   - 🌀 Ismétlődő minták: n-edik elem, hány darab, mennyivel több, hányadik lesz
   - ⏰ Idő: óra leolvasása, eltelt idő, érkezés/indulás, menetrend, naptár
+  - 🎲 Kombinatorika: „sorold fel az összes lehetőséget” – választás (sorrend nem számít), tornyok és zászlók feltételekkel, öltöztetés/menü, útvonalak ábrán, számok kártyákból, „hányféleképpen?”. A gyerek betűgombokkal rakja ki a lehetőségeket, a hibás (felesleges) lehetőséget a program megjelöli és megindokolja.
 - **Hibakezelés:** első hibánál tipp, a második hibánál lépésenkénti, képes magyarázat. Ilyenkor a gyerek a saját válaszát is látja, a felismert hibával együtt („úgy számoltál, mintha egy órában 100 perc lenne”). Utána ikerfeladat jön, a hibás típus pedig 1, 3 és 7 nap múlva visszatér.
 - **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás és pontlevonás nincs.
 - **Napi küldetés:** 10 feladat vagy 15 perc. Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés.
@@ -52,6 +53,6 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Következő ütemek
 
-- 2. hullám: kombinatorika („sorold fel az összeset”), műveletek, szöveges feladatok, pénz, szabálykeresés, logika
+- 2. hullám: műveletek, szöveges feladatok, pénz, szabálykeresés, logika
 - Próbafelvételi mód: 45 perc, az eredeti feladatsorokkal, a javítási útmutató szerinti pontozással
 - 3. hullám: síkidomok, kockaépítmények, biztos/lehetséges/lehetetlen, halmazábra

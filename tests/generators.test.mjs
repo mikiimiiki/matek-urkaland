@@ -40,14 +40,21 @@ for (const T of TYPES) for (const S of T.subs) for (let lvl = 1; lvl <= 3; lvl++
       if (!A.value.length || A.value.some(v => v < 0 || v >= A.options.length)) fail(key, "rossz pick", t);
     } else if (A.kind === "numset") {
       if (!A.value.length || new Set(A.value).size !== A.value.length) fail(key, "üres/ismétlődő megoldáshalmaz", t);
+    } else if (A.kind === "combos") {
+      if (!A.value.length || new Set(A.value).size !== A.value.length) fail(key, "üres/ismétlődő lehetőséglista", t);
+      if (A.value.length > 10) fail(key, "túl sok lehetőség a felsoroláshoz: " + A.value.length, t);
+      if (!A.slots && !A.path) fail(key, "nincs lehetőség-építő (slots/path)", t);
+      if (A.slots && A.value.some(v => v.split("-").length !== A.slots.length)) fail(key, "a lehetőség hossza nem egyezik a helyek számával", t);
+      if (A.slots && A.value.some(v => v.split("-").some((x, i) => !A.slots[i].opts.includes(x)))) fail(key, "a helyes lehetőség nem rakható ki a gombokból", t);
     } else fail(key, "ismeretlen választípus " + A.kind, t);
     // A helyes válasz átmegy az ellenőrzőn
-    const correctInput = A.kind === "numset" ? A.value.slice().reverse() : A.kind === "pick" ? A.value.slice().reverse() : A.value;
+    const correctInput = A.kind === "numset" || A.kind === "pick" ? A.value.slice().reverse()
+      : A.kind === "combos" ? A.value.slice().reverse().map(v => (A.ordered ? v.split("-") : v.split("-").reverse())) : A.value;
     const r = checkAnswer(A, correctInput);
     if (!r.ok) fail(key, "a helyes válasz nem megy át az ellenőrzőn", t);
     // A hibaelemző nem dobhat hibát rossz válaszra
     try {
-      const wrong = A.kind === "num" ? A.value + 10 : A.kind === "time" ? A.value + 60 : A.kind === "choice" ? (A.value + 1) % A.options.length : A.kind === "pick" ? [0] : [100, 999];
+      const wrong = A.kind === "num" ? A.value + 10 : A.kind === "time" ? A.value + 60 : A.kind === "choice" ? (A.value + 1) % A.options.length : A.kind === "pick" ? [0] : A.kind === "combos" ? [["X", "Y"], A.value[0].split("-")] : [100, 999];
       if (t.why) { const w = t.why(wrong); if (w != null && typeof w !== "string") fail(key, "why nem szöveg", t); }
     } catch (e) { fail(key, "why kivétel: " + e.message, t); }
   }

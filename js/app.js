@@ -1,7 +1,7 @@
 // ===== Matek Űrkaland – felület és játékmenet =====
 import { TYPES, COMING, typeById, makeTask } from "./types/index.js";
 import { makeRng, plain, esc } from "./util.js";
-import { checkAnswer, parseNum, answerText, correctText } from "./check.js";
+import { checkAnswer, parseNum, answerText, correctText, comboKey } from "./check.js";
 import * as E from "./engine.js";
 import { createCloud } from "./cloud.js";
 
@@ -263,7 +263,63 @@ function renderAnswer() {
     S.read = () => { if (i.value.trim()) add(); return S.set.length ? S.set.slice() : null; };
     S.inputs = [i];
     setTimeout(() => i.focus(), 30);
+  } else if (A.kind === "combos") renderCombos(A, box);
+}
+
+// --- „Sorold fel az összes lehetőséget”: lehetőség-építő ---
+// A gyerek betűgombokkal rak ki egy lehetőséget (a helyek a feladat szerint: torony szintjei, ruhadarabok,
+// útvonal állomásai), felírja a listára, és kezdi a következőt. A listából bármelyiket törölheti.
+function renderCombos(A, box) {
+  S.list = []; S.cur = [];
+  const item = k => A.items.find(i => i.k === k) || { k, n: k };
+  const dot = k => item(k).c ? `<span class="dot" style="background:${item(k).c}"></span>` : "";
+  const prefixLen = () => A.path ? 1 : (() => { let n = 0; while (A.slots[n] && A.slots[n].opts.length === 1) n++; return n; })();
+  const reset = () => { S.cur = A.path ? [A.path.start] : []; while (A.slots && A.slots[S.cur.length] && A.slots[S.cur.length].opts.length === 1) S.cur.push(A.slots[S.cur.length].opts[0]); };
+  const full = () => A.slots ? S.cur.length === A.slots.length : S.cur.length > 1 && S.cur[S.cur.length - 1] === A.path.end;
+  const optsNow = () => {
+    if (full()) return [];
+    if (A.slots) { const o = A.slots[S.cur.length].opts; return A.ordered ? o : o.filter(x => !S.cur.includes(x)); }
+    const last = S.cur[S.cur.length - 1];
+    if (A.path.guided) return A.path.edges.filter(e => e[0] === last).map(e => e[1]);
+    return A.items.map(i => i.k).filter(k => k !== A.path.start && !S.cur.includes(k));
+  };
+  const wrap = el("div", "combo"); wrap.tabIndex = 0;
+  const curRow = el("div", "combo-cur"), optRow = el("div", "opts combo-opts"), ctl = el("div", "ans-row"), chips = el("div", "chips");
+  const back = btn("secondary", "⌫ Vissza", () => { if (S.phase !== "answer") return; if (S.cur.length > prefixLen()) S.cur.pop(); draw(); });
+  const add = () => {
+    if (S.phase !== "answer") return false;
+    if (!full()) { toast(A.path ? "Az útnak F-ben kell véget érnie!" : "Még nincs kész ez a lehetőség – töltsd ki az összes helyet!"); return false; }
+    const k = comboKey(A, S.cur), dup = S.list.find(x => comboKey(A, x) === k);
+    if (dup) { toast(A.ordered ? "Ezt már felírtad! 🙂" : `Ezt már felírtad: ${dup.join(" ")} – itt a sorrend nem számít.`); reset(); draw(); return true; }
+    S.list.push(S.cur.slice()); reset(); draw(); wrap.focus(); return true;
+  };
+  const addBtn = btn("primary", "➕ Felírom a listára", add);
+  function draw() {
+    const n = A.slots ? A.slots.length : S.cur.length + (full() ? 0 : 1);
+    curRow.innerHTML = Array.from({ length: n }, (_, i) => {
+      const k = S.cur[i], lab = A.slots ? A.slots[i].label : `${i + 1}.`;
+      return `<div class="slotw"><div class="slot ${k ? "filled" : ""} ${i === S.cur.length ? "next" : ""}">${k ? dot(k) + esc(k) : "?"}</div><div class="slot-l">${esc(lab)}</div></div>`;
+    }).join(A.path ? `<span class="slot-arrow">→</span>` : "");
+    optRow.innerHTML = "";
+    optsNow().forEach(k => optRow.append(btn("opt", `${dot(k)}<b>${esc(k)}</b>${item(k).n ? ` <span class="small">${esc(item(k).n)}</span>` : ""}`, () => { if (S.phase !== "answer") return; S.cur.push(k); draw(); })));
+    if (full()) optRow.append(el("span", "soft small", "Kész ez a lehetőség – írd fel a listára!"));
+    addBtn.disabled = !full();
+    chips.innerHTML = "";
+    S.list.forEach((x, i) => { const c = el("span", "chip", `${x.map(k => dot(k) + esc(k)).join(" ")}`); c.append(btn("", "✕", () => { if (S.phase !== "answer") return; S.list.splice(i, 1); draw(); })); chips.append(c); });
+    if (!S.list.length) chips.append(el("span", "soft small", "Itt gyűlnek a felírt lehetőségek."));
   }
+  ctl.append(back, addBtn);
+  wrap.append(el("p", "soft small", "Kattints a betűkre, így rakd ki az egyik lehetőséget, aztán írd fel a listára. Ha mindet felírtad, nyomd meg az Ellenőrzés gombot!"), curRow, optRow, ctl, el("div", "combo-title", "📝 A listád:"), chips);
+  box.append(wrap);
+  wrap.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); if (full()) add(); else onEnter(e); }
+    if (e.key === "Backspace") { e.preventDefault(); back.click(); }
+  });
+  reset(); draw();
+  S.read = () => S.list.length ? S.list.map(x => x.slice()) : null;
+  S.inputs = [];
+  S.showCombos = () => { optRow.innerHTML = ""; addBtn.disabled = true; back.disabled = true; chips.innerHTML = A.value.map(v => `<span class="chip" style="background:var(--okbg);color:var(--ok)">${v.split("-").map(k => dot(k) + esc(k)).join(" ")}</span>`).join(""); };
+  setTimeout(() => wrap.focus(), 30);
 }
 // Az ellenőrzést kiváltó Enter-leütést "elfogyasztjuk" (preventDefault), így ugyanaz a leütés
 // nem nyomja meg rögtön a Tovább gombot is – a gyerek látja a visszajelzést.
@@ -274,7 +330,7 @@ const PRAISE = ["Szuper! 🚀", "Telitalálat! ⭐", "Pontos landolás! 🛬", "
 function check() {
   if (S.phase !== "answer") return;
   const t = S.task, A = t.ans, v = S.read ? S.read() : null;
-  if (v == null || (Array.isArray(v) && !v.length)) return toast(A.kind === "pick" ? "Jelölj meg legalább egyet!" : A.kind === "time" ? "Írd be az órát és a percet!" : "Írj be egy számot!");
+  if (v == null || (Array.isArray(v) && !v.length)) return toast(A.kind === "pick" ? "Jelölj meg legalább egyet!" : A.kind === "time" ? "Írd be az órát és a percet!" : A.kind === "combos" ? "Írj fel legalább egy lehetőséget a listára!" : "Írj be egy számot!");
   const r = checkAnswer(A, v);
   S.lastInput = v;
   if (r.ok) return correct();
@@ -284,7 +340,7 @@ function check() {
   if (S.clicked) { S.clicked.classList.add("wrong"); S.clicked.disabled = true; }
   if (S.tries === 1) {
     let extra = "";
-    if (A.kind === "numset" || A.kind === "pick") extra = `<p>${r.good ? `${r.good} jót már megtaláltál. ` : ""}${r.missing ? `Még hiányzik ${r.missing}. ` : ""}${r.extra ? `${r.extra} olyan is van köztük, ami nem jó – a felvételin ezért pontlevonás jár!` : ""}</p>`;
+    if (A.kind === "numset" || A.kind === "pick" || A.kind === "combos") extra = `<p>${r.good ? `${r.good} jót már megtaláltál. ` : ""}${r.missing ? `Még hiányzik ${r.missing}. ` : ""}${r.extra ? `${r.extra} olyan is van köztük, ami nem jó – a felvételin ezért pontlevonás jár!` : ""}</p>`;
     $("side-body").innerHTML = `<div class="fb hint"><div class="fb-title">Nem egészen… 🤔</div>Próbáld újra! Itt egy tipp:</div><div class="step" style="padding-left:14px">💡 ${t.hint}</div>${extra}`;
     if (ttsOn) speak("Nem egészen. " + t.hint);
     return;
@@ -350,6 +406,7 @@ function explain(v) {
 }
 function showCorrect() {
   const t = S.task, A = t.ans;
+  if (A.kind === "combos" && S.showCombos) S.showCombos();
   if (A.kind === "num" || A.kind === "numset") { const i = S.inputs[0]; i.value = A.kind === "num" ? A.value : ""; i.classList.remove("wrong"); i.classList.add("right"); if (A.kind === "numset") $("answer").querySelector(".chips").innerHTML = A.value.map(v => `<span class="chip" style="background:var(--okbg);color:var(--ok)">${v}</span>`).join(""); }
   if (A.kind === "time") { const [h, m] = S.inputs; h.value = Math.floor(A.value / 60); m.value = String(A.value % 60).padStart(2, "0"); [h, m].forEach(i => { i.classList.remove("wrong"); i.classList.add("right"); }); }
   if (A.kind === "choice" || A.kind === "pick") { const want = [].concat(A.value); document.querySelectorAll("#answer .opt").forEach((b, k) => { b.classList.remove("sel"); if (want.includes(k)) b.classList.add("right"); }); }
