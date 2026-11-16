@@ -5,8 +5,9 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 
 ## Mit tud (1. ütem)
 
-- **9 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
+- **10 feladattípus generátorral**, végtelen sok változattal. A típusok a 2022–2026-os feladatlapok elemzése alapján készültek (lásd [docs/feladattipusok.md](docs/feladattipusok.md)):
   - 🪐 Számok tulajdonságai: kerekítés, számszomszédok, helyi érték, számkártyák, „találd ki a számot”
+  - ☄️ Műveletek: műveleti sorrend lépésenként (zárójel, szorzás/osztás előbb, azonos szinten balról jobbra), műveletek szövegesen („Mennyivel kevesebb…”, „Hányszorosa…”, „kétszeresénél 30-cal több”), hiányzó tag (kisebbítendő, osztó…), számpiramis, fejszámolási fogások
   - 🌕 Mértékegységek: átváltás, vegyes alak, pótlás, becslés
   - 📊 Diagramok: leolvasás, különbség, összeg, legnagyobb/legkisebb, „között van”, hányszor annyi, középső, igaz/hamis
   - 🌀 Ismétlődő minták: n-edik elem, hány darab, mennyivel több, hányadik lesz
@@ -58,6 +59,6 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Következő ütemek
 
-- 2. hullám: műveletek, logika
+- 2. hullám: logika
 - Próbafelvételi mód: 45 perc, az eredeti feladatsorokkal, a javítási útmutató szerinti pontozással
 - 3. hullám: síkidomok, kockaépítmények, biztos/lehetséges/lehetetlen, halmazábra
