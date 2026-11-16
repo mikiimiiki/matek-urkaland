@@ -17,6 +17,7 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
   - 🎲 Kombinatorika: „sorold fel az összes lehetőséget” – választás (sorrend nem számít), tornyok és zászlók feltételekkel, öltöztetés/menü, útvonalak ábrán, számok kártyákból, „hányféleképpen?”. A gyerek betűgombokkal rakja ki a lehetőségeket, a hibás (felesleges) lehetőséget a program megjelöli és megindokolja.
 - **Hibakezelés:** első hibánál tipp, a második hibánál lépésenkénti, képes magyarázat. Ilyenkor a gyerek a saját válaszát is látja, a felismert hibával együtt („úgy számoltál, mintha egy órában 100 perc lenne”). Utána ikerfeladat jön, a hibás típus pedig 1, 3 és 7 nap múlva visszatér.
 - **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás és pontlevonás nincs.
+- **Szabad gyakorlás:** a térképen egy bolygóra kattintva rögzített hosszú kör indul abból a típusból (3, 5 vagy 10 feladat – a szülői felületen állítható); az üres karikák már az elején mutatják, hány feladat lesz, a kör végén összegzés.
 - **Napi küldetés:** 10 feladat vagy 15 perc. Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés.
 - **Szülői felület (PIN-nel):** heti összefoglaló, színes térkép arról, miben erős a gyerek és min kell még dolgozni, hibanapló, jutalmak, napi cél, profilok, felhős mentés.
 - **Felolvasás** (🔊, alapból kikapcsolva) a böngésző magyar hangjával.

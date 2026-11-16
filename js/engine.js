@@ -8,7 +8,9 @@ export const dateKey = n => new Date(n * 864e5).toISOString().slice(0, 10);
 const weekOf = day => Math.floor((day + 3) / 7); // hétfőtől vasárnapig (1970.01.01. csütörtök volt)
 
 // ---- Alapértékek ----
-export const DEFAULT_SETTINGS = { goalTasks: 10, goalMin: 15, tts: false, rewards: [], upd: 0 };
+// freeTasks: hány feladatból áll egy szabad gyakorló kör (3, 5 vagy 10)
+export const DEFAULT_SETTINGS = { goalTasks: 10, goalMin: 15, freeTasks: 5, tts: false, rewards: [], upd: 0 };
+export const FREE_SIZES = [3, 5, 10];
 export const AVATARS = ["🧑‍🚀", "👩‍🚀", "👨‍🚀", "🤖", "👽", "🐱", "🦊", "🐼", "🐶", "🦄"];
 const REVIEW_DAYS = [1, 3, 7, 21]; // ismétlés: 1, 3, 7 nap múlva, utána ritkán
 export const POINTS = { first: 10, second: 5, explained: 2, twinBonus: 3, lvl3Bonus: 2 };

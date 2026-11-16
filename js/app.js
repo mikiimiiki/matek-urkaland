@@ -94,6 +94,7 @@ function renderHome() {
   const s = state.settings, mp = E.missionProgress(u, s);
   $("home-hello").textContent = `Szia, ${u.name}! ${mp.done ? "A mai küldetés kész – szabadon repülhetsz tovább! 🌟" : "Indulhat a mai küldetés?"}`;
   $("mission-sub").textContent = `${s.goalTasks} feladat vagy ${s.goalMin} perc – amelyik előbb teljesül`;
+  $("map-hint").textContent = `– kattints egy bolygóra: ${freeSize()} feladatos gyakorló kör`;
   $("mission-bar").style.width = Math.round(mp.pct * 100) + "%";
   $("mission").classList.toggle("done", mp.done);
   $("btn-mission").textContent = mp.done ? "🚀 Még egy kör" : mp.n ? "🚀 Folytatás" : "🚀 Indítás";
@@ -170,17 +171,25 @@ function startMission() {
   show("scr-play"); $("play-title").textContent = mp.done ? "🚀 Plusz kör" : "🚀 Napi küldetés";
   nextTask();
 }
+// Szabad gyakorlás: egy típusból rögzített hosszú kör (a szülő állítja: 3, 5 vagy 10 feladat).
+// Az altípust feladatonként, közvetlenül előtte választjuk, hogy a kör közben is a gyengébbek jöjjenek.
+const FREE_SIZES = [3, 5, 10]; // itt is megadjuk, hogy egy félig frissült böngésző-gyorsítótár se okozzon hibát
+const freeSize = () => FREE_SIZES.includes(+state.settings.freeTasks) ? +state.settings.freeTasks : 5;
 function startFree(T) {
-  S = { mode: "free", T: T.id, plan: [], idx: 0, res: [] };
-  show("scr-play"); $("play-title").textContent = `${T.planet.emoji} ${T.planet.name} – szabad gyakorlás`;
+  const n = freeSize();
+  S = { mode: "free", T: T.id, plan: Array.from({ length: n }, () => ({ T: T.id, sub: null })), idx: 0, res: [] };
+  show("scr-play"); $("play-title").textContent = `${T.planet.emoji} ${T.planet.name} – ${n} feladat`;
   nextTask();
 }
 function nextTask(twinOf = null) {
   const u = cur();
   let item;
   if (twinOf) item = { T: twinOf.type, sub: twinOf.sub, lvl: twinOf.lvl, twin: true };
-  else if (S.mode === "mission") { if (S.idx >= S.plan.length) return endRound(); item = S.plan[S.idx]; }
-  else { const T = typeById(S.T); item = { T: T.id, sub: E.pickSub(u, T, E.typeLvl(u, T.id), rng) }; }
+  else {
+    if (S.idx >= S.plan.length) return endRound();
+    item = S.plan[S.idx];
+    if (!item.sub) { const T0 = typeById(item.T); item.sub = E.pickSub(u, T0, E.typeLvl(u, T0.id), rng); }
+  }
   const T = typeById(item.T);
   const lvl = item.lvl || E.typeLvl(u, T.id);
   const task = makeTask(T, item.sub, lvl, rng);
@@ -190,8 +199,8 @@ function nextTask(twinOf = null) {
 }
 function renderDots() {
   const d = $("play-dots"); d.innerHTML = "";
-  const n = S.mode === "mission" ? Math.max(S.plan.length, S.res.length + 1) : Math.min(10, S.res.length + 1);
-  const res = S.mode === "mission" ? S.res : S.res.slice(-9);
+  // a kör összes feladata már az elején látszik üres karikaként (az ikerfeladatok menet közben kerülnek be)
+  const n = Math.max(S.plan.length, S.res.length), res = S.res;
   for (let i = 0; i < n; i++) { const r = res[i]; d.append(el("i", r === 1 ? "ok" : r === 2 ? "mid" : r === 0 ? "bad" : i === res.length ? "cur" : "")); }
 }
 function renderTask() {
@@ -354,7 +363,7 @@ function correct() {
   if (S.clicked) S.clicked.classList.add("right");
   if (t.ans.kind === "pick") document.querySelectorAll("#answer .opt.sel").forEach(b => b.classList.add("right"));
   const ev = E.record(u, t, rr, Date.now() - S.t0, logOpts(t, rr === 2 ? S.firstWrong : null));
-  S.res.push(rr); if (S.mode === "mission") S.idx++;
+  S.res.push(rr); S.idx++;
   save(); renderTop(); renderDots();
   const praise = rr === 1 ? PRAISE[rng.int(0, PRAISE.length - 1)] : "Javítottad! ✔️";
   $("side-body").innerHTML = `<div class="fb ok"><div class="fb-title">${praise}</div>${rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(correctText(t.ans))}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ⛽</b>${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
@@ -369,7 +378,7 @@ function explain(v) {
   S.inputs.forEach(i => { i.disabled = true; });
   document.querySelectorAll("#answer .opt").forEach(b => { b.disabled = true; });
   const ev = E.record(u, t, 0, Date.now() - S.t0, logOpts(t, v));
-  S.res.push(0); if (S.mode === "mission") S.idx++;
+  S.res.push(0); S.idx++;
   save(); renderTop(); renderDots();
   let why = null; try { why = t.why ? t.why(v) : null; } catch (e) { console.warn(e); }
   const sb = $("side-body");
@@ -387,13 +396,12 @@ function explain(v) {
       // a gyerek választhat: továbblép, vagy még gyakorol egy hasonlóval (nem ragad bele végtelen körbe).
       // Küldetésben az ikerfeladat bekerül a tervbe (a pöttyök is mutatják), szabad gyakorlásban rögtön jön.
       const twin = () => {
-        if (S.mode === "mission") { S.plan.splice(S.idx, 0, { T: t.type, sub: t.sub, lvl: t.lvl, twin: true }); nextTask(); }
-        else nextTask(t);
+        S.plan.splice(S.idx, 0, { T: t.type, sub: t.sub, lvl: t.lvl, twin: true }); nextTask();
       };
       const next = () => nextTask();
       if (!S.twin) { setActions([btn("primary big", "🔁 Próbáld ki egy hasonlóval!", twin)]); S.onNext = twin; }
       else {
-        const last = S.mode === "mission" && S.idx >= S.plan.length;
+        const last = S.idx >= S.plan.length;
         setActions([btn("primary big", last ? "Kész! 🏁" : "Következő feladat ▶", next), btn("secondary big", "🔁 Még egy hasonló", twin)]);
         S.onNext = next;
         box.append(el("div", "fb hint", "Ez most nehéz volt – semmi baj! Választhatsz: továbbmehetsz, vagy gyakorolhatsz még egy hasonlóval. Ez a feladattípus pár nap múlva úgyis visszajön."));
@@ -418,7 +426,7 @@ function logOpts(t, v) { return { twin: S.twin, q: speechText(t.q).slice(0, 220)
 const AUTO_NEXT_MS = 1500;
 function nextButton(auto = false) {
   // a S.idx már a következőre mutat
-  const last = S.mode === "mission" && S.idx >= S.plan.length;
+  const last = S.idx >= S.plan.length;
   const t = S.task;
   const go = () => { clearTimeout(S.autoT); nextTask(); };
   const b = btn("primary big" + (auto ? " auto" : ""), last ? "Kész! 🏁" : "Tovább ▶", go);
@@ -453,9 +461,19 @@ function celebrate(me) {
   });
 }
 function endRound() {
-  const ok = S.res.filter(r => r === 1).length;
-  toast(`Kör vége: ${ok}/${S.res.length} elsőre jó. 🚀`);
-  goHome();
+  const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, T = typeById(S.T);
+  if (mode !== "free") { toast(`Kör vége: ${ok}/${all} elsőre jó. 🚀`); return goHome(); }
+  if (ok === all) confetti();
+  modal((box, close) => {
+    box.classList.add("celebrate");
+    box.append(el("div", "big-emoji", ok === all ? "🌟" : ok >= all / 2 ? "🚀" : "💪"), el("h3", null, `${T.planet.name}: kör vége!`),
+      el("p", null, `<b>${ok}</b> feladat sikerült elsőre a ${all}-ból.<br>${ok === all ? "Hibátlan kör – szuper!" : ok >= all / 2 ? "Szép munka! Gyakorlással még jobb lesz." : "Ez nehéz volt – a hibás típusok pár nap múlva visszajönnek gyakorolni."}`),
+      el("div", "dots", S.res.map(r => `<i class="${r === 1 ? "ok" : r === 2 ? "mid" : "bad"}"></i>`).join("")));
+    box.lastChild.style.justifyContent = "center"; box.lastChild.style.margin = "8px 0";
+    const row = el("div", "mbtns"); row.style.justifyContent = "center";
+    row.append(btn("secondary", "Vissza a térképre", () => { close(); goHome(); }), btn("primary", "🔁 Még egy kör", () => { close(); startFree(T); }));
+    box.append(row);
+  });
 }
 function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); }
 
@@ -553,10 +571,12 @@ function renderParent() {
   // 6. Beállítások
   const sc = card("⚙️ Napi cél és beállítások");
   sc.insertAdjacentHTML("beforeend", `<div class="form-row">Napi küldetés: <input id="set-tasks" type="number" min="3" max="40" value="${state.settings.goalTasks}"> feladat vagy <input id="set-min" type="number" min="5" max="60" value="${state.settings.goalMin}"> perc</div>
+    <div class="form-row">Szabad gyakorlás egy bolygón: <select id="set-free">${FREE_SIZES.map(n => `<option value="${n}" ${n === freeSize() ? "selected" : ""}>${n} feladat</option>`).join("")}</select> egy körben</div>
     <div class="form-row"><label><input id="set-tts" type="checkbox" ${state.settings.tts ? "checked" : ""}> 🔊 Felolvasás alapból bekapcsolva</label></div>`);
   sc.append(btn("primary", "Mentés", () => {
     state.settings.goalTasks = Math.max(3, Math.min(40, +$("set-tasks").value || 10));
     state.settings.goalMin = Math.max(5, Math.min(60, +$("set-min").value || 15));
+    state.settings.freeTasks = +$("set-free").value || 5;
     state.settings.tts = $("set-tts").checked; ttsOn = state.settings.tts; updTtsBtn();
     saveSettings(); toast("✅ Elmentve.");
   }));
