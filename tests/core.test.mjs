@@ -58,7 +58,7 @@ ok(keyToDay(dateKey(t)) === t, "dateKey ↔ keyToDay oda-vissza egyezik");
   ok(clampValue(g, 99) === 40 && clampValue(g, "x") === 10, "number: határok és hibás érték");
   ok(clampValue(f, "10") === 10 && clampValue(f, 7) === 5, "select: csak a megengedett érték");
   ok(resolve(g, {}, { goalTasks: 12 }) === 12 && resolve(g, { goalTasks: 20 }, { goalTasks: 12 }) === 20 && resolve(g, null, null) === 10, "resolve: gyerek → család → alap");
-  ok(Object.keys(defaultsFor(SETTINGS, "child")).length === 4, "4 gyerekenkénti beállítás");
+  ok(Object.keys(defaultsFor(SETTINGS, "child")).length === 6, "6 gyerekenkénti beállítás");
   ok(TOPICS().length === TYPES.length, "minden bolygó téma a Fejlődés fülön");
 }
 // --- adat-átállás

@@ -35,6 +35,8 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 
   Billentyűk az ablakban: ←/→ vagy 1–6 fülváltás, Tab lépés, F1 a fül súgója, Esc bezárás.
 - **Ranglétra és szekrény:** 12 rang (Űrkadét → Csillagflotta-legenda) a ⛽ alapján. A kezdőlap rangsávja mutatja, mennyi hiányzik és kb. hány nap (az utolsó 7 nap tempójával); rákattintva nagy áttekintő nyílik a létrával és a szekrénnyel. Rangonként új avatar, háttér, rakéta, konfetti vagy névkeret nyílik, új rangnál ünneplés. A meglévő avatar akkor is megmarad, ha a rang szerint még zárva lenne.
+- **Ünnepek (2026/27 tél):** 🎄 adventi naptár dec. 1–24. a kezdőlapon (a mai ablak a napi küldetés után nyílik; egy plusz kör – a napi cél után még 5 feladat – után naponta egy kihagyott ablak pótolható), 🎅 Mikulás dec. 6-án, 🎄 karácsony dec. 24–26., 🎆 szilveszter/újév, ❄️ hóesés dec. 1. – jan. 6. Az ünnepi tárgyak (Mikulás- és hóember-avatar, karácsonyi háttér és rakéta, hópehely- és tűzijáték-konfetti, 2027-es keret) a szekrénybe kerülnek. Gyerekenként kikapcsolható (⚙️ Beállítások), a hóesés csökkentett mozgásnál magától nem fut.
+- **Dátum szimulálása teszteléshez:** `index.html?nap=2026-12-06#debug` – külön tesztadatokkal és felhő nélkül fut, a valódi adatok nem változnak.
 - **Szinkronmódok (eszközönként):** ⚡ folyamatos · ✅ minden feladat után (ajánlott, alapértelmezett) · 🏠 főmenübe lépéskor. Csak a megváltozott mezők mennek fel (egy feladat kb. 0,3–0,6 KB), a hibanapló külön ágon van, és csak a Hibák fül nyitásakor töltődik le. 5 perc tétlenség vagy háttérbe kerülés után a kapcsolat szünetel (💤).
 - **Eszközfelismerés:** minden böngésző saját azonosítót és javasolt nevet kap (pl. „Windows – Chrome”). Ha több gyerek van, az első indításkor megkérdezi: „Ki játszik ezen az eszközön?” (mentés szülői PIN-nel). Egy hozzárendelt gyerek esetén a játék automatikusan vele indul; több esetén a választó csak őket mutatja.
 - **☁️ Szinkron ablak (PIN nélkül):** állapot, eseménynapló, Mentés most, Újrakapcsolódás; a ⚙️ gomb PIN után a Felhő fülre visz.
@@ -58,6 +60,7 @@ node tests/generators.test.mjs
 node tests/core.test.mjs
 node tests/sync.test.mjs
 node tests/ranks.test.mjs
+node tests/events.test.mjs
 node tests/cloud.test.mjs
 node tests/firebase-keys.test.mjs
 ```
@@ -88,6 +91,6 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Felépítés (újrahasznosítható keret)
 
-- `js/core/`: játékfüggetlen keret: gyorsbillentyűk (`keys.js`), egymásra rakható ablakok (`modal.js`), füles ablak (`tabs.js`), leíró alapú beállítások (`settings.js`), fejlődés-adatok (`progress.js`), diagram (`charts.js`), részleges szinkron és összefésülés (`syncdiff.js`), eszközazonosító és forgalomszámláló (`device.js`), kinyitható tárgyak segédei (`cosmetics.js`).
-- `js/game/`: a Matek Űrkaland saját beállításai (`config.js`: témák, beállítások leírása), az adat-átállás (`migrate.js`), a ranglétra (`ranks.js`) és a tárgykatalógus (`cosmetics-catalog.js`).
+- `js/core/`: játékfüggetlen keret: gyorsbillentyűk (`keys.js`), egymásra rakható ablakok (`modal.js`), füles ablak (`tabs.js`), leíró alapú beállítások (`settings.js`), fejlődés-adatok (`progress.js`), diagram (`charts.js`), részleges szinkron és összefésülés (`syncdiff.js`), eszközazonosító és forgalomszámláló (`device.js`), kinyitható tárgyak segédei (`cosmetics.js`), időszakos események (`events.js`), hóesés (`snow.js`).
+- `js/game/`: a Matek Űrkaland saját beállításai (`config.js`: témák, beállítások leírása), az adat-átállás (`migrate.js`), a ranglétra (`ranks.js`), a tárgykatalógus (`cosmetics-catalog.js`) és az ünnepek (`events.js`).
 - `js/parent/tabs.js`: a ⚙️ ablak fülei; az `app.js` egy `app` objektumon keresztül adja az adatokat.

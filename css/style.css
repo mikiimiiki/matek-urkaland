@@ -91,6 +91,31 @@ h1 { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #c4b5
 #tb-user.fr-silver { box-shadow: 0 0 0 3px #e2e8f0, 0 0 12px rgba(226,232,240,.7); }
 #tb-user.fr-gold { box-shadow: 0 0 0 3px #facc15, 0 0 16px rgba(250,204,21,.8); }
 .legend-tag { background: linear-gradient(90deg, #facc15, #f472b6); color: #1e1b4b; border-radius: 8px; padding: 0 6px; font-size: 12px; font-weight: 900; margin-left: 4px; vertical-align: middle; }
+.rk-xmas { filter: saturate(1.6) drop-shadow(0 0 6px #dc2626) drop-shadow(0 0 12px #facc15); }
+#tb-user.fr-2027 { box-shadow: 0 0 0 3px #f472b6, 0 0 0 5px #facc15, 0 0 16px rgba(244,114,182,.8); }
+#snow { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+/* --- Adventi naptár --- */
+.advent { max-width: 760px; margin: 14px auto 0; background: linear-gradient(135deg, #fff 0%, #fef2f2 100%); border: 2px solid #fecaca; }
+.advent-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.advent h2 { font-size: 22px; }
+.advent p { margin: 4px 0 8px; }
+.advent-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.aw { aspect-ratio: 1; border: 0; border-radius: 12px; font-weight: 900; font-size: 18px; display: grid; place-items: center; transition: transform .15s; position: relative; }
+.aw small { font-size: 10px; }
+.aw-future { background: #e2e8f0; color: #94a3b8; }
+.aw-future .aw-no::after { content: "🔒"; font-size: 10px; position: absolute; right: 4px; bottom: 2px; }
+.aw-wait { background: #fde68a; color: #92400e; box-shadow: inset 0 0 0 2px #f59e0b; }
+.aw-today { background: linear-gradient(135deg, #dc2626, #f59e0b); color: #fff; animation: awpulse 1.2s ease-in-out infinite; }
+.aw-makeup { background: linear-gradient(135deg, #16a34a, #22d3ee); color: #fff; animation: awpulse 1.6s ease-in-out infinite; }
+.aw-missed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+.aw-open { background: #fff; box-shadow: inset 0 0 0 2px #fecaca; font-size: 20px; }
+.aw-got { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; line-height: 1; font-size: 15px; }
+.aw.opening { animation: awopen .45s ease-in forwards; }
+@keyframes awpulse { 50% { transform: scale(1.08); box-shadow: 0 0 14px rgba(245,158,11,.8); } }
+@keyframes awopen { to { transform: rotateY(90deg) scale(1.2); opacity: .2; } }
+.stickers { margin: 8px 0 0; font-size: 20px; }
+.reward-line { font-size: 22px; font-weight: 900; }
+@media (max-width: 640px) { .advent-grid { grid-template-columns: repeat(6, 1fr); } }
 .ranks-modal { max-width: 900px; }
 .rk-head { display: flex; gap: 16px; align-items: center; }
 .rk-big { font-size: 64px; line-height: 1; }

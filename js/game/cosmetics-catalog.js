@@ -36,5 +36,13 @@ export const ITEMS = [
   { id: "frame:none", kind: "frame", label: "Nincs keret", show: "▫️", cls: "" },
   { id: "frame:silver", kind: "frame", label: "Ezüst keret", show: "🥈", cls: "fr-silver" },
   { id: "frame:gold", kind: "frame", label: "Arany keret", show: "🥇", cls: "fr-gold" },
+  // ünnepi (különleges) tárgyak: nem rangból nyílnak, hanem eseményből (u.owned) – a szekrényben csak megszerzés után látszanak
+  { id: "av:🎅", kind: "av", label: "Mikulás", show: "🎅", value: "🎅", special: true },
+  { id: "av:⛄", kind: "av", label: "Hóember", show: "⛄", value: "⛄", special: true },
+  { id: "bg:xmas", kind: "bg", label: "Karácsonyi éj", special: true, vars: { space1: "#06140c", space2: "#14532d", glow: "#dc2626" } },
+  { id: "rocket:xmas", kind: "rocket", label: "Piros-arany rakéta", show: "🚀", cls: "rk-xmas", special: true },
+  { id: "confetti:snow", kind: "confetti", label: "Hópelyhek", show: "❄️", colors: ["#ffffff", "#e0f2fe", "#bae6fd", "#c7d2fe"], shape: "dot", special: true },
+  { id: "confetti:fireworks", kind: "confetti", label: "Tűzijáték", show: "🎆", colors: ["#f43f5e", "#facc15", "#22d3ee", "#a3e635", "#f472b6", "#ffffff"], shape: "star", special: true },
+  { id: "frame:2027", kind: "frame", label: "2027-es keret", show: "🎆", cls: "fr-2027", special: true },
 ];
 export const itemById = id => ITEMS.find(i => i.id === id);

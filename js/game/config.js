@@ -24,5 +24,7 @@ export const SETTINGS = [
       { value: "task", label: "✅ Minden feladat után (ajánlott)", help: "Minden válasz után felmegy (pár száz bájt). Letöltés induláskor, főmenübe lépéskor és a ⚙️ ablak nyitásakor." },
       { value: "home", label: "🏠 Főmenübe lépéskor", help: "Csak a kör végén, főmenübe lépéskor és az oldal bezárásakor szinkronizál. A legkevesebb forgalom." },
     ] },
+  { key: "events", scope: "child", type: "toggle", default: true, label: "🎄 Ünnepi események", help: "Adventi naptár, Mikulás, karácsony, szilveszter – ünnepi jutalmak a napi küldetésért." },
+  { key: "snow", scope: "child", type: "toggle", default: true, label: "❄️ Hóesés decemberben", help: "December 1. és január 6. között hó esik a háttérben (ha az ünnepi események be vannak kapcsolva). Csökkentett mozgás beállításnál magától kikapcsol." },
   { key: "tts", scope: "child", type: "toggle", default: false, label: "🔊 Felolvasás alapból bekapcsolva", help: "A feladatot és a magyarázatot a gép felolvassa (a 🔊 gombbal a gyakorlásban is kapcsolható)." },
 ];

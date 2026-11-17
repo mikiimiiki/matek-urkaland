@@ -516,9 +516,11 @@ Minden ütem után élesítés (GitHub Pages), és a következő a jóváhagyás
 
 **Átvétel:**
 
-- [ ] A dátumot szimulálva (tesztkapcsolóval) minden esemény a helyes napokon jelenik meg és ad jutalmat.
-- [ ] A pótlás naponta legfeljebb egy ablakot nyit, és csak plusz kör után.
-- [ ] Kikapcsolt ünnepeknél semmi nem jelenik meg; a hóesés csökkentett mozgásnál nem fut.
+- [x] A dátumot szimulálva (tesztkapcsolóval) minden esemény a helyes napokon jelenik meg és ad jutalmat.
+- [x] A pótlás naponta legfeljebb egy ablakot nyit, és csak plusz kör után.
+- [x] Kikapcsolt ünnepeknél semmi nem jelenik meg; a hóesés csökkentett mozgásnál nem fut.
+
+> Megvalósítva (2026-11-17). Tesztkapcsoló: `?nap=ÉÉÉÉ-HH-NN#debug` (külön tárolóval, felhő nélkül). Ellenőrzés: `tests/events.test.mjs` és böngészőben szimulált dec. 6-án (küldetés → Mikulás, 6. ablak, plusz kör → pótlás, kapcsolók). A „plusz kör” = a napi cél után még 5 feladat.
 
 ---
 

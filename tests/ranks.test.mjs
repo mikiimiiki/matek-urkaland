@@ -13,7 +13,7 @@ const ok = (c, msg) => { console.log((c ? "✓ " : "✗ ") + msg); if (!c) fails
 
 ok(RANKS.length === 12 && RANKS.every((r, i) => !i || r.pts > RANKS[i - 1].pts), "12 rang, növekvő ⛽-határokkal");
 ok(RANKS.flatMap(r => r.unlocks).every(id => itemById(id)), "minden rangjutalom szerepel a katalógusban");
-ok(ITEMS.every(it => unlockRank(it.id)), "minden katalógustárgy valamelyik rangnál nyílik");
+ok(ITEMS.every(it => it.special ? !unlockRank(it.id) : unlockRank(it.id)), "minden (nem ünnepi) tárgy valamelyik rangnál nyílik, az ünnepiek nem");
 ok(Object.entries(DEFAULTS).every(([k, id]) => RANKS[0].unlocks.includes(id) && itemById(id).kind === k), "az alapértelmezett tárgyak az első rangnál nyílnak");
 ok(KINDS.every(K => ITEMS.some(it => it.kind === K.id)), "minden fajtából van tárgy");
 ok(rankOf(0).name === "Űrkadét" && rankOf(299).n === 1 && rankOf(300).name === "Pilóta" && rankOf(1786).name === "Felfedező" && rankOf(99999).n === 12 && rankOf(99999).need === 0, "rang a ⛽ alapján");

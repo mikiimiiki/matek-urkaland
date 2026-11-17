@@ -18,10 +18,17 @@ import { parentTabs } from "./parent/tabs.js";
 import { RANKS, rankOf, rankIndex, rankItems, unlockRank, daysTo } from "./game/ranks.js";
 import { ITEMS, KINDS, DEFAULTS, itemById } from "./game/cosmetics-catalog.js";
 import { unlockedSet, equipped, applyVars, swapClass } from "./core/cosmetics.js";
+import { dayNum, dateKey, keyToDay, setToday, isSimulated } from "./core/dates.js";
+import { activeEvents, claimOnce, adventState, adventDay, openWindow } from "./core/events.js";
+import { setSnow } from "./core/snow.js";
+import { EVENTS, PLUS_ROUND } from "./game/events.js";
 const rng = makeRng();
 
 // ---------- Állapot (helyben mindig mentünk; a felhő opcionális) ----------
-const STORE = "matek_urkaland_v1";
+// Teszteléshez: index.html?nap=2026-12-06#debug → a „mai nap” 2026. dec. 6.; ilyenkor külön tesztadatokkal, felhő nélkül fut
+const SIM_DAY = location.hash === "#debug" ? new URLSearchParams(location.search).get("nap") : null;
+if (SIM_DAY && /^\d{4}-\d{2}-\d{2}$/.test(SIM_DAY)) setToday(keyToDay(SIM_DAY));
+const STORE = isSimulated() ? "matek_urkaland_sim" : "matek_urkaland_v1";
 let state = (() => { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch { return null; } })()
   || { familyCode: "", current: "", users: {}, settings: { ...E.DEFAULT_SETTINGS }, deleted: {} };
 state.settings = Object.assign({ ...E.DEFAULT_SETTINGS }, state.settings || {});
@@ -70,11 +77,11 @@ function confetti() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const u = cur(), C = itemById(u ? look(u).confetti : DEFAULTS.confetti) || itemById(DEFAULTS.confetti);
   const cv = $("confetti"), ctx = cv.getContext("2d"); cv.width = innerWidth; cv.height = innerHeight;
-  const cols = C.colors, star = C.shape === "star";
+  const cols = C.colors, star = C.shape === "star", dot = C.shape === "dot";
   const ps = Array.from({ length: 150 }, () => ({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5, vx: Math.random() * 4 - 2, vy: 2 + Math.random() * 4, s: 6 + Math.random() * 6, c: cols[Math.random() * cols.length | 0], r: Math.random() * 6 }));
   const drawStar = s => { ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = Math.PI / 5 * k, rr = k % 2 ? s / 2.4 : s; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); };
   const t0 = performance.now();
-  (function frame(t) { ctx.clearRect(0, 0, cv.width, cv.height); ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); if (star) drawStar(p.s * .8); else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }); if (t - t0 < 2800) requestAnimationFrame(frame); else ctx.clearRect(0, 0, cv.width, cv.height); })(t0);
+  (function frame(t) { ctx.clearRect(0, 0, cv.width, cv.height); ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); if (star) drawStar(p.s * .8); else if (dot) { ctx.beginPath(); ctx.arc(0, 0, p.s / 2.5, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }); if (t - t0 < 2800) requestAnimationFrame(frame); else ctx.clearRect(0, 0, cv.width, cv.height); })(t0);
 }
 
 // ---------- Kinyitható tárgyak: mi van kinyitva, mi van felvéve ----------
@@ -88,6 +95,9 @@ function applyLook() {
   applyVars((itemById(L.bg) || itemById(DEFAULTS.bg)).vars);
   swapClass($("mascot"), "rk-", (itemById(L.rocket) || {}).cls);
   swapClass($("tb-user"), "fr-", (itemById(L.frame) || {}).cls);
+  // hóesés: ha az ünnepek és a hó is be van kapcsolva, és téli időszak van
+  const P = u ? prefs(u) : {};
+  setSnow(u && P.events && P.snow && activeEvents(EVENTS, dayNum(), "ambient").some(e => e.effect === "snow"));
 }
 const speechText = html => plain(String(html).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<table[\s\S]*?<\/table>/g, " "))
   .replace(/·/g, " szorozva ").replace(/ : /g, " osztva ").replace(/−/g, " mínusz ").replace(/→/g, ", ").replace(/≥/g, " nagyobb vagy egyenlő ").replace(/&lt;|</g, " kisebb ");
@@ -144,6 +154,7 @@ function renderHome() {
     const reached = rws.find(x => x.p.done), next = reached || rws.slice().sort((a, b) => b.p.pct - a.p.pct)[0];
     rb.innerHTML = reached ? `🎁 <b>${esc(reached.r.text)}</b> – elérted! Szólj a szüleidnek! 🎉` : `🎁 Következő jutalom: <b>${esc(next.r.text)}</b><br><span class="soft small">még ${next.p.need - next.p.have} ${E.REWARD_KINDS[next.r.kind]}</span><div class="bar"><i style="width:${Math.round(next.p.pct * 100)}%"></i></div>`;
   }
+  renderAdvent(u);
   // bolygók
   const map = $("map"); map.innerHTML = "";
   TYPES.forEach(T => {
@@ -535,6 +546,7 @@ function afterEvents(ev) {
   if (!mp.done && mp.pct >= 1) {
     const me = E.completeMission(u); save(); renderTop();
     if (me) setTimeout(() => celebrate(me), 700);
+    setTimeout(checkHolidays, 1600);
   }
 }
 function celebrate(me) {
@@ -550,7 +562,9 @@ function celebrate(me) {
   });
 }
 // ---------- Ranglétra és szekrény ----------
-const itemIcon = id => { const it = itemById(id); if (!it) return ""; if (it.kind === "bg") return "🌌"; return it.show || ""; };
+const itemIcon = id => { if (id.startsWith("st:")) return id.slice(3); const it = itemById(id); if (!it) return ""; if (it.kind === "bg") return it.special ? "🎄" : "🌌"; return it.show || ""; };
+const itemLabel = id => id.startsWith("st:") ? "matrica" : (itemById(id) || { label: id }).label;
+const rewardText = rw => rw.map(r => r.pts ? `+${r.pts} ⛽` : `${itemIcon(r.item)} ${esc(itemLabel(r.item))}`).join(" · ");
 function celebrateRank(i) {
   const R = RANKS[i];
   confetti();
@@ -592,7 +606,7 @@ function openRanks(kind) {
       box.append(seg);
       const grid = el("div", "wardrobe");
       const cur0 = wardrobeKind === "av" ? "av:" + u.avatar : L[wardrobeKind];
-      const items = ITEMS.filter(it => it.kind === wardrobeKind).concat((u.owned || []).filter(id => id.startsWith(wardrobeKind + ":") && !itemById(id)).map(id => ({ id, kind: wardrobeKind, label: "Különleges", show: id.slice(wardrobeKind.length + 1), value: id.slice(wardrobeKind.length + 1) })));
+      const items = ITEMS.filter(it => it.kind === wardrobeKind && (!it.special || un.has(it.id))).concat((u.owned || []).filter(id => id.startsWith(wardrobeKind + ":") && !itemById(id)).map(id => ({ id, kind: wardrobeKind, label: "Különleges", show: id.slice(wardrobeKind.length + 1), value: id.slice(wardrobeKind.length + 1) })));
       items.forEach(it => {
         const open = un.has(it.id), from = unlockRank(it.id);
         let face = `<span class="wic">${it.show || ""}</span>`;
@@ -615,6 +629,68 @@ function openRanks(kind) {
   }, { cls: "wide ranks-modal" });
 }
 
+// ---------- Ünnepek: egyszeri események és adventi naptár ----------
+function holidayConds(u) {
+  const d = u.days[dateKey(dayNum())] || {}, P = prefs(u);
+  return { missionDone: !!d.done, todayOk: !!d.done, makeupOk: !!d.done && (d.n || 0) >= P.goalTasks + PLUS_ROUND };
+}
+function checkHolidays() {
+  const u = cur(); if (!u || !prefs(u).events) return;
+  const c = holidayConds(u), won = activeEvents(EVENTS, dayNum(), "once").map(ev => claimOnce(u, ev, c)).filter(Boolean);
+  if (!won.length) return;
+  save(); renderTop(); if ($("scr-home").classList.contains("on")) renderHome();
+  won.forEach((r, i) => setTimeout(() => holidayModal(r.ev.title, r.ev.text, r.ev.reward), i * 400));
+}
+function holidayModal(title, text, reward) {
+  confetti();
+  modal((box, close) => {
+    box.classList.add("celebrate");
+    box.append(el("div", "big-emoji", title.split(" ")[0]), el("h3", null, esc(title.split(" ").slice(1).join(" ") || title)));
+    if (text) box.append(el("p", null, esc(text)));
+    box.append(el("p", "reward-line", rewardText(reward)));
+    const row = el("div", "mbtns"); row.style.justifyContent = "center";
+    const it = reward.find(r => r.item && !r.item.startsWith("st:"));
+    row.append(btn(it ? "secondary" : "primary", "Szuper! 🎉", () => close()));
+    if (it) row.append(btn("primary", "Megnézem a szekrényben ✨", () => { close(); openRanks(itemById(it.item).kind); }));
+    box.append(row);
+  });
+}
+// Az ablakok sorrendje a rácsban (rögzített keverés, mint egy igazi adventi naptárban)
+const ADVENT_ORDER = [7, 18, 3, 12, 22, 1, 15, 9, 24, 5, 20, 11, 2, 16, 8, 23, 13, 6, 19, 4, 14, 21, 10, 17];
+function renderAdvent(u) {
+  const box = $("advent"), ev = prefs(u).events ? activeEvents(EVENTS, dayNum(), "advent")[0] : null;
+  box.hidden = !ev; if (!ev) { box.innerHTML = ""; return; }
+  const c = holidayConds(u), ws = adventState(u, ev, c), byDay = Object.fromEntries(ws.map(w => [w.day, w])), n = adventDay(ev);
+  const t = byDay[n], mk = ws.some(w => w.state === "makeup");
+  const note = t.state === "open" ? (mk ? "🎁 Plusz kört teljesítettél – egy kihagyott ablakot ma még pótolhatsz!" : `A mai ablak kinyitva. ${c.makeupOk ? (ws.some(w => w.state === "missed") ? "Ma már pótoltál egy ablakot – holnap újra lehet! 🙂" : "") : `Kihagytál egyet? Egy plusz kör (a napi cél után még ${PLUS_ROUND} feladat) után pótolhatod.`}`)
+    : t.state === "today" ? "✨ Teljesítetted a mai küldetést – nyisd ki a mai ablakot!" : "🚀 Teljesítsd a mai küldetést, és kinyithatod a mai ablakot!";
+  box.innerHTML = `<div class="advent-head"><h2>${ev.title}</h2><span class="soft small">${n}. nap / 24</span></div><p class="soft small">${note}</p>`;
+  const grid = el("div", "advent-grid");
+  ADVENT_ORDER.forEach(d => {
+    const w = byDay[d];
+    const face = w.state === "open" ? `<span class="aw-got">${w.reward.map(r => r.pts ? `+${r.pts}<small>⛽</small>` : itemIcon(r.item)).join("")}</span>` : `<span class="aw-no">${d}</span>`;
+    const b = btn("aw aw-" + w.state, face, () => adventClick(u, ev, w));
+    b.dataset.day = d; b.title = { open: "Kinyitva", today: "Ma nyitható!", makeup: "Pótolható!", wait: "Előbb a mai küldetés", missed: "Kihagytad", future: "Még zárva" }[w.state] + ` (${d}.)`;
+    grid.append(b);
+  });
+  box.append(grid);
+  const st = (u.owned || []).filter(id => id.startsWith("st:"));
+  if (st.length) box.append(el("p", "small stickers", `Matricáid: ${st.map(id => id.slice(3)).join(" ")}`));
+}
+function adventClick(u, ev, w) {
+  if (w.state === "today" || w.state === "makeup") {
+    const r = openWindow(u, ev, w.day, holidayConds(u));
+    if (!r) return;
+    save(); renderTop();
+    const b = document.querySelector(`#advent .aw[data-day="${w.day}"]`); if (b) b.classList.add("opening");
+    setTimeout(() => { renderHome(); holidayModal(`🎄 ${w.day}. ablak${r.makeup ? " (pótlás)" : ""}`, r.makeup ? "Ügyes! A plusz körrel pótoltad ezt az ablakot." : "Ezt rejtette a mai ablak:", w.reward); }, 450);
+    return;
+  }
+  const msg = { open: `Ezt már kinyitottad: ${rewardText(w.reward)}`, wait: "🚀 Teljesítsd a mai küldetést, és kinyithatod!", future: "🔒 Még nem lehet – türelem! 🎄",
+    missed: holidayConds(u).makeupOk ? "Ma már pótoltál egy ablakot – holnap újra lehet! 🙂" : `Ezt kihagytad. Ha ma a napi cél után még egy plusz kört (${PLUS_ROUND} feladatot) teljesítesz, egy kihagyott ablakot pótolhatsz!` }[w.state];
+  toast(msg, 4000);
+}
+
 function endRound() {
   cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
   const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, T = typeById(S.T);
@@ -631,7 +707,7 @@ function endRound() {
     box.append(row);
   }, { esc: close => { close(); goHome(); } });
 }
-function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); cloud.checkpoint("home"); maybeAskDevice(); }
+function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); cloud.checkpoint("home"); maybeAskDevice(); checkHolidays(); }
 
 // ---------- Szülői PIN ----------
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
@@ -852,7 +928,7 @@ $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if 
 // F1: súgó a kijelölt bolygóról. Felugró ablakban az ablak saját kontextusa érvényes (Esc = Mégse).
 const homeKeys = {
   id: "home",
-  items: () => [$("btn-mission"), $("rankbox"), ...document.querySelectorAll("#map button.planet")],
+  items: () => [$("btn-mission"), ...document.querySelectorAll("#advent .aw-today, #advent .aw-makeup"), $("rankbox"), ...document.querySelectorAll("#map button.planet")],
   onF1: () => openHelp(),
 };
 // Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a bolygó súgója.
@@ -876,6 +952,8 @@ if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || 
 enforceDevice();
 renderTop(); renderHome();
 if (!state.current) newPlayer(true);
-device.ready.then(() => cloud.init());
+if (isSimulated()) setTimeout(() => toast(`🧪 Szimulált nap: <b>${dateKey(dayNum())}</b> – külön tesztadatokkal, felhő nélkül.`, 6000), 500);
+else device.ready.then(() => cloud.init());
+setTimeout(checkHolidays, 1200);
 setTimeout(maybeAskDevice, 1500);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
