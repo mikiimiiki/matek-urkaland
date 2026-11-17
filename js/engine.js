@@ -100,7 +100,8 @@ export function record(u, task, r, ms, opts = {}) {
   d.n++; if (r === 1) d.ok++; d.ms += Math.min(ms || 0, 180000);
   histAdd(u, task.type, r === 1, ms, today); // napi, bolygónkénti statisztika a Fejlődés fülhöz
   if (r !== 1) {
-    u.log.push({ t: Date.now(), T: task.type, s: task.sub, lvl: task.lvl, r, q: opts.q || "", a: opts.a || "", c: opts.c || "", w: opts.w || "" });
+    // az időbélyeg a bejegyzés kulcsa a felhőben → mindig egyedi
+    u.log.push({ t: Math.max(Date.now(), u.log.length ? (u.log[u.log.length - 1].t || 0) + 1 : 0), T: task.type, s: task.sub, lvl: task.lvl, r, q: opts.q || "", a: opts.a || "", c: opts.c || "", w: opts.w || "" });
     if (u.log.length > 120) u.log.splice(0, u.log.length - 120);
   }
   ev.badges = checkBadges(u);

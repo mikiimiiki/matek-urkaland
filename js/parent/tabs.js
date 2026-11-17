@@ -7,6 +7,18 @@ import { series, compare, histAgg, pctOf, PERIODS, MIN_ANSWERS } from "../core/p
 import { trendChart } from "../core/charts.js";
 import { dayNum, dateKey } from "../core/dates.js";
 import { SETTINGS, TOPICS, GAME } from "../game/config.js";
+import { monthKey } from "../core/device.js";
+
+// Bájtok emberi formában
+const fmtBytes = b => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : b < 1073741824 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1073741824).toFixed(2)} GB`;
+// „ma 16:20”, „tegnap 8:05”, „5 napja”
+function seen(t) {
+  if (!t) return "–";
+  const d = dayNum() - dayNum(new Date(t)), hm = new Date(t).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" });
+  return d <= 0 ? `ma ${hm}` : d === 1 ? `tegnap ${hm}` : `${d} napja`;
+}
+const MODE_LABEL = { live: "⚡ Folyamatos", task: "✅ Feladatonként", home: "🏠 Főmenüben" };
+const SPARK = { down: 10 * 1073741824, store: 1073741824 };   // Spark: 10 GB letöltés / hó, 1 GB tárhely
 
 const PER_KEY = "progress_period";
 const getPeriod = () => { try { return localStorage.getItem(PER_KEY) || "week"; } catch { return "week"; } };
@@ -69,8 +81,13 @@ export function parentTabs(app) {
 
   // ---------- 📝 Hibák ----------
   let mistakeFilter = "";
+  const logsFetched = new Set();
   function mistakes(box, ctx) {
     const u = child(ctx); if (!u) return empty(box);
+    if (app.cloud.ready && !logsFetched.has(u.name)) {
+      logsFetched.add(u.name);
+      app.fetchLogs(u.name).then(changed => { if (changed) ctx.redraw(); });
+    }
     const sel = el("select", "mfilter");
     sel.append(new Option("Minden bolygó", ""));
     TYPES.forEach(T => sel.append(new Option(`${T.planet.emoji} ${T.name}`, T.id)));
@@ -126,31 +143,108 @@ export function parentTabs(app) {
     }));
   }
 
+  // ---------- Eszközök: közös gyorsítótár a Család és a Felhő fülhöz ----------
+  let devs = null, devAt = 0, devBusy = false;
+  function loadDevices(ctx) {
+    if (devBusy || Date.now() - devAt < 15000) return;
+    devBusy = true;
+    app.devicesList().then(r => {
+      const changed = JSON.stringify(r) !== JSON.stringify(devs);
+      devs = r; devAt = Date.now(); devBusy = false;
+      if (changed) ctx.redraw();
+    }, () => { devBusy = false; });
+  }
+
   // ---------- 👪 Család ----------
   function family(box, ctx) {
+    const users = Object.values(app.state.users);
     box.append(el("h4", "psub", "👧 Játékosok"));
-    Object.values(app.state.users).forEach(x => {
+    users.forEach(x => {
       const row = el("div", "rw-item", `<span>${x.avatar} <b>${escHtml(x.name)}</b> <span class="soft small">⛽ ${x.pts} · ${x.total} feladat</span></span>`);
-      const del = btn("ghost danger", "🗑️ Törlés", async () => { if (await app.deleteUser(x.name)) ctx.redraw(); });
-      row.append(del); box.append(row);
+      const acts = el("span", "rw-acts");
+      acts.append(btn("ghost", "✏️ Átnevezés", async () => { if (await app.renameUser(x.name)) ctx.redraw(); }));
+      acts.append(btn("ghost danger", "🗑️ Törlés", async () => { if (await app.deleteUser(x.name)) ctx.redraw(); }));
+      row.append(acts); box.append(row);
     });
     const r = el("div", "form-row");
     r.append(btn("secondary", "➕ Új játékos", () => app.newPlayer(() => ctx.redraw())));
     box.append(r);
-    box.append(el("h4", "psub", "📱 Eszközök"), el("p", "placeholder small", "Az eszközök felismerése és a gyerekek eszközhöz rendelése a következő ütemben érkezik."));
+
+    // Eszközök: ki játszik melyik eszközön
+    box.append(el("h4", "psub", "📱 Eszközök – ki játszik rajtuk?"));
+    loadDevices(ctx);
+    const list = devs ? devs.list : [{ id: app.device.id, name: app.device.name, model: "", lastSeen: Date.now(), kids: app.device.kids, syncMode: app.device.syncMode, me: true }];
+    const wrap = el("div", "devwrap"), tb = el("table", "devtable");
+    tb.innerHTML = `<thead><tr><th>Eszköz</th><th>Utoljára</th>${users.map(u => `<th class="c" title="${escHtml(u.name)}">${u.avatar}<br><span class="small">${escHtml(u.name)}</span></th>`).join("")}<th>Szinkron</th><th></th></tr></thead>`;
+    const body = el("tbody");
+    list.forEach(d => {
+      const tr = el("tr", d.me ? "me" : "");
+      const old = d.lastSeen && dayNum() - dayNum(new Date(d.lastSeen)) > 60;
+      const td0 = el("td");
+      const name = el("input", "devname"); name.value = d.name; name.maxLength = 40; name.setAttribute("aria-label", "Eszköz neve");
+      name.addEventListener("change", () => app.renameDevice(d.id, name.value).then(ok => { if (ok) { toast("✅ Átnevezve"); devAt = 0; } }));
+      td0.append(name, el("div", "soft small", `${d.me ? "<b>ez az eszköz</b>" : escHtml(d.model || "")}${old ? ' · <span class="tag-old">régi</span>' : ""}`));
+      tr.append(td0, el("td", "small", seen(d.lastSeen)));
+      users.forEach(u => {
+        const td = el("td", "c"), cb = el("input"); cb.type = "checkbox";
+        cb.checked = !!(d.kids && d.kids.includes(u.id));
+        cb.setAttribute("aria-label", `${u.name} játszhat ezen: ${d.name}`);
+        cb.addEventListener("change", () => {
+          const k = new Set(d.kids || []); if (cb.checked) k.add(u.id); else k.delete(u.id);
+          d.kids = k.size ? [...k] : null;
+          app.setDeviceKids(d.id, d.kids).then(ok => toast(ok ? "✅ Elmentve" : "💾 Ezen az eszközön elmentve – a felhőbe a következő szinkronkor kerül"));
+        });
+        td.append(cb); tr.append(td);
+      });
+      tr.append(el("td", "small", MODE_LABEL[d.syncMode] || "–"));
+      const tdd = el("td");
+      if (!d.me) tdd.append(btn("ghost danger", "🗑️", async () => { if (await app.removeDevice(d.id, d.name)) { devAt = 0; devs.list = devs.list.filter(x => x.id !== d.id); ctx.redraw(); } }));
+      tr.append(tdd); body.append(tr);
+    });
+    tb.append(body); wrap.append(tb); box.append(wrap);
+    box.append(el("p", "legend", `Pipa nélkül mindenki játszhat az eszközön (a játékosválasztó minden gyereket mutat). Egy pipa: a játék automatikusan az ő nevével indul. ${!app.cloud.ready ? "A többi eszköz a felhős belépés után jelenik meg." : devs ? "" : "Eszközlista betöltése…"}`));
+
     box.append(el("h4", "psub", "🔑 Szülői PIN"));
     box.append(btn("secondary", "🔑 PIN módosítása", () => app.setNewPin()));
   }
 
   // ---------- ☁️ Felhő ----------
-  function cloudTab(box) { app.renderCloudInto(box); }
+  function cloudTab(box, ctx) {
+    // Szinkronmód ehhez az eszközhöz
+    box.append(el("h4", "psub", "🔁 Szinkron ezen az eszközön"));
+    const form = el("div", "set-form");
+    renderForm(form, SETTINGS.filter(d => d.scope === "device" && d.key === "syncMode"), () => app.cloud.mode, (def, v) => { app.cloud.setMode(v); devAt = 0; toast("✅ Szinkronmód: " + (MODE_LABEL[v] || v)); });
+    box.append(form);
+
+    // Forgalom ebben a hónapban
+    loadDevices(ctx);
+    const m = monthKey(), mine = app.device.traffic(m);
+    const others = devs ? devs.list.filter(d => !d.me) : [];
+    const fam = others.reduce((a, d) => { const t = (d.traffic || {})[m] || {}; a.up += t.up || 0; a.down += t.down || 0; a.syncs += t.syncs || 0; return a; }, { ...mine });
+    const store = app.cloud.storageEstimate();
+    const pct = (a, b) => Math.min(100, a / b * 100);
+    const bar = (p) => `<div class="pbar sbar"><i style="width:${Math.max(p, 0.5)}%" class="${p > 80 ? "r" : p > 50 ? "" : "g"}"></i></div>`;
+    box.append(el("h4", "psub", `📶 Forgalom – ${m.replace("-", ". ")}.`));
+    box.append(el("div", "ptiles", `
+      <div class="ptile"><div class="ptile-t">Ez az eszköz</div><div class="ptile-g g3"><div><b>${fmtBytes(mine.up)}</b><span>feltöltve</span></div><div><b>${fmtBytes(mine.down)}</b><span>letöltve</span></div><div><b>${mine.syncs}</b><span>szinkron</span></div></div></div>
+      <div class="ptile"><div class="ptile-t">A család összesen${devs ? ` (${devs.list.length} eszköz)` : ""}</div><div class="ptile-g g3"><div><b>${fmtBytes(fam.up)}</b><span>feltöltve</span></div><div><b>${fmtBytes(fam.down)}</b><span>letöltve</span></div><div><b>${fam.syncs}</b><span>szinkron</span></div></div></div>`));
+    const spark = el("div", "spark");
+    spark.innerHTML = `<div class="spark-row"><span>Letöltés ebben a hónapban</span>${bar(pct(fam.down, SPARK.down))}<b>${pct(fam.down, SPARK.down).toFixed(3)}%</b><span class="soft small">${fmtBytes(fam.down)} / 10 GB</span></div>
+      <div class="spark-row"><span>Tárhely</span>${bar(pct(store, SPARK.store))}<b>${pct(store, SPARK.store).toFixed(3)}%</b><span class="soft small">${fmtBytes(store)} / 1 GB</span></div>`;
+    box.append(el("p", "small", "<b>Becsült Spark-felhasználás</b> (ingyenes Firebase-csomag):"), spark);
+    box.append(el("p", "legend", `Ez <b>becslés</b>: az app minden küldött és fogadott adatot megmér (+200 bájt protokoll-többlet üzenetenként). A pontos adatok a Firebase-konzolban vannak (Realtime Database → Usage)${app.consoleUrl ? ` – <a href="${app.consoleUrl}" target="_blank" rel="noopener">megnyitás</a>` : ""}.`));
+
+    // Belépés, családtagok, eseménynapló
+    box.append(el("h4", "psub", "☁️ Fiók és család"));
+    app.renderCloudInto(box);
+  }
 
   return [
     { id: "progress", icon: "📊", label: "Fejlődés", child: true, help: "Mennyit és milyen pontosan gyakorolt napi, heti és havi bontásban, bolygónként.", render: progress },
     { id: "planets", icon: "🗺️", label: "Bolygók", child: true, help: "Minden bolygó csillagai, szintje és az altípusok állapota (zöld: megy, piros: gyenge).", render: planets },
     { id: "mistakes", icon: "📝", label: "Hibák", child: true, help: "Mit rontott el, mi lett volna a jó válasz, és mi lehetett a hiba oka.", render: mistakes },
     { id: "settings", icon: "⚙️", label: "Beállítások", child: true, help: "Napi cél, a szabad kör hossza, felolvasás és jutalmak – gyerekenként.", render: settings },
-    { id: "family", icon: "👪", label: "Család", child: false, help: "Játékosok, eszközök és a szülői PIN.", render: family },
-    { id: "cloud", icon: "☁️", label: "Felhő", child: false, help: "Belépés, családtagok, szinkron és eseménynapló.", render: cloudTab },
+    { id: "family", icon: "👪", label: "Család", child: false, help: "Játékosok (átnevezés, törlés), melyik eszközön ki játszik, szülői PIN.", render: family },
+    { id: "cloud", icon: "☁️", label: "Felhő", child: false, help: "Szinkronmód, adatforgalom és Spark-becslés, belépés, családtagok, eseménynapló.", render: cloudTab },
   ];
 }

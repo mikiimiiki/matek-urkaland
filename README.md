@@ -30,10 +30,12 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
   - 🗺️ **Bolygók:** csillagok, szintek, altípusok állapota színekkel;
   - 📝 **Hibák:** hibanapló bolygó szerinti szűréssel;
   - ⚙️ **Beállítások:** napi cél, szabad kör hossza, felolvasás és jutalmak **gyerekenként**, családi alapértékkel;
-  - 👪 **Család:** játékosok, PIN;
-  - ☁️ **Felhő:** belépés, családtagok, szinkron.
+  - 👪 **Család:** játékosok (átnevezés, törlés), **eszközök táblázata**: melyik eszközön ki játszhat (pipákkal), PIN;
+  - ☁️ **Felhő:** szinkronmód ehhez az eszközhöz, **adatforgalom** (ez az eszköz és a család összesen) és becsült Spark-felhasználás, belépés, családtagok.
 
   Billentyűk az ablakban: ←/→ vagy 1–6 fülváltás, Tab lépés, F1 a fül súgója, Esc bezárás.
+- **Szinkronmódok (eszközönként):** ⚡ folyamatos · ✅ minden feladat után (ajánlott, alapértelmezett) · 🏠 főmenübe lépéskor. Csak a megváltozott mezők mennek fel (egy feladat kb. 0,3–0,6 KB), a hibanapló külön ágon van, és csak a Hibák fül nyitásakor töltődik le. 5 perc tétlenség vagy háttérbe kerülés után a kapcsolat szünetel (💤).
+- **Eszközfelismerés:** minden böngésző saját azonosítót és javasolt nevet kap (pl. „Windows – Chrome”). Ha több gyerek van, az első indításkor megkérdezi: „Ki játszik ezen az eszközön?” (mentés szülői PIN-nel). Egy hozzárendelt gyerek esetén a játék automatikusan vele indul; több esetén a választó csak őket mutatja.
 - **☁️ Szinkron ablak (PIN nélkül):** állapot, eseménynapló, Mentés most, Újrakapcsolódás; a ⚙️ gomb PIN után a Felhő fülre visz.
 - **Billentyűzet a kezdőképernyőn:** Tab / Shift+Tab lép a küldetés gomb és a bolygók között (körbe), Enter elindítja a kijelöltet.
 - **Súgó (F1 vagy ❓):** gyerekeknek szóló leírás a kijelölt bolygóról (mit gyakorol ott, példafeladat, tipp), kijelölés nélkül áttekintés mind a 15 bolygóról; gyakorlás közben az aktuális bolygóról.
@@ -53,10 +55,12 @@ Ezután nyisd meg a `http://localhost:3000` címet. Bármilyen statikus szerver 
 ```bash
 node tests/generators.test.mjs
 node tests/core.test.mjs
+node tests/sync.test.mjs
+node tests/cloud.test.mjs
 node tests/firebase-keys.test.mjs
 ```
 
-A `core.test.mjs` a fejlődés-adatokat (napi/heti/havi összesítés), a beállítások ellenőrzését és az adat-átállást (schema 2) teszteli. A `generators.test.mjs`:
+A `cloud.test.mjs` memóriabeli ál-Firebase-szel két eszközt szimulál (részleges feltöltés, összefésülés, régi változatú eszköz, hibanapló-ág, eszköz-hozzárendelés, törlés), a `sync.test.mjs` a mezőnkénti összehasonlítást és a feladatonkénti feltöltés méretét méri. A `core.test.mjs` a fejlődés-adatokat (napi/heti/havi összesítés), a beállítások ellenőrzését és az adat-átállást (schema 2) teszteli. A `generators.test.mjs`:
 Típusonként, altípusonként és szintenként 1000 feladatot generál, és mindegyiket ellenőrzi:
 - van-e válasz, és egész szám-e;
 - nem negatív-e, és nem túl nagy-e;
@@ -82,6 +86,6 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Felépítés (újrahasznosítható keret)
 
-- `js/core/`: játékfüggetlen keret: gyorsbillentyűk (`keys.js`), egymásra rakható ablakok (`modal.js`), füles ablak (`tabs.js`), leíró alapú beállítások (`settings.js`), fejlődés-adatok (`progress.js`), diagram (`charts.js`).
+- `js/core/`: játékfüggetlen keret: gyorsbillentyűk (`keys.js`), egymásra rakható ablakok (`modal.js`), füles ablak (`tabs.js`), leíró alapú beállítások (`settings.js`), fejlődés-adatok (`progress.js`), diagram (`charts.js`), részleges szinkron és összefésülés (`syncdiff.js`), eszközazonosító és forgalomszámláló (`device.js`).
 - `js/game/`: a Matek Űrkaland saját beállításai (`config.js`: témák, beállítások leírása) és az adat-átállás (`migrate.js`).
 - `js/parent/tabs.js`: a ⚙️ ablak fülei; az `app.js` egy `app` objektumon keresztül adja az adatokat.

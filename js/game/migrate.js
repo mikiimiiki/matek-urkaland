@@ -4,12 +4,22 @@
 // - a családi jutalomlista minden gyerekhez átmásolódik (u.rewards); az „átadva” jelölések megmaradnak;
 // - a régi napi összesítés bekerül a fejlődés-adatokba (u.hist, „_all” kulcs);
 // - az avatar a „szekrénybe” kerül (u.cosmetics, u.owned), hogy a későbbi rangrendszerben is megmaradjon.
+// - schema 3: minden gyerek belső azonosítót kap (u.id) – az eszköz-hozzárendelés ehhez kötődik, nem a névhez.
+//   Meglévő gyereknél a névből számoljuk, így két eszköz egymástól függetlenül is ugyanazt kapja.
+//   (A hibanapló külön felhőágra költözését a cloud.js végzi az első feltöltéskor.)
 // Amit a program nem ismer, azt nem törli. Többször lefuttatva sem változtat semmin.
 import { backfill } from "../core/progress.js";
 import { defaultsFor } from "../core/settings.js";
 import { SETTINGS } from "./config.js";
 
-export const SCHEMA = 2;
+export const SCHEMA = 3;
+// Névből számolt, állandó azonosító (FNV-1a)
+export function idFromName(name) {
+  let h = 0x811c9dc5;
+  for (const ch of String(name)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return "c" + h.toString(16).padStart(8, "0");
+}
+export const newId = () => "c" + [...crypto.getRandomValues(new Uint8Array(4))].map(b => b.toString(16).padStart(2, "0")).join("");
 const clone = x => JSON.parse(JSON.stringify(x ?? null));
 
 export function migrateFamily(state) {
@@ -29,6 +39,7 @@ export function migrateUser(u, state) {
   if (!u.hist) backfill(u);
   if (!u.cosmetics) u.cosmetics = { avatar: u.avatar };
   if (!Array.isArray(u.owned)) u.owned = u.owned ? Object.values(u.owned) : (u.avatar ? ["av:" + u.avatar] : []);
+  if (!u.id) u.id = idFromName(u.name);
   if ((u.schema || 1) < SCHEMA) u.schema = SCHEMA;
   return u;
 }

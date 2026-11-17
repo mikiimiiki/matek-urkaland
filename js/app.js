@@ -4,6 +4,8 @@ import { makeRng, plain, esc } from "./util.js";
 import { checkAnswer, parseNum, answerText, correctText, comboKey } from "./check.js";
 import * as E from "./engine.js";
 import { createCloud } from "./cloud.js";
+import { createDevice, guessName } from "./core/device.js";
+import { FIREBASE_CONFIG } from "./firebase-config.js";
 import { PLANET_INFO } from "./planet-info.js";
 import { $, el, btn, toast } from "./core/dom.js";
 import { modal, ask, isOpen as isModalOpen } from "./core/modal.js";
@@ -11,7 +13,7 @@ import * as keys from "./core/keys.js";
 import { openTabs } from "./core/tabs.js";
 import { resolve } from "./core/settings.js";
 import { SETTINGS, GAME } from "./game/config.js";
-import { migrateFamily, migrateUser } from "./game/migrate.js";
+import { migrateFamily, migrateUser, newId } from "./game/migrate.js";
 import { parentTabs } from "./parent/tabs.js";
 const rng = makeRng();
 
@@ -35,13 +37,24 @@ function save() { const u = cur(); if (u) u.upd = Date.now(); persist(); if (u) 
 function saveUser(u) { u.upd = Date.now(); persist(); cloud.queue(u.name); if (u === cur()) { ttsOn = !!prefs(u).tts; updTtsBtn(); } refreshAll(); }
 function saveFamily() { state.settings.upd = Date.now(); persist(); cloud.pushSettings(); refreshAll(); }
 
+// Ez az eszköz (azonosító, név, hozzárendelt gyerekek, szinkronmód, forgalom)
+const device = createDevice(STORE);
 const cloud = createCloud({
-  state: () => state, persist, normUser: normMig,
+  state: () => state, persist, normUser: normMig, device, storeKey: STORE,
+  onDevice: rec => {
+    // a szülő egy másik eszközön módosíthatta ennek az eszköznek a nevét vagy a hozzárendelést
+    let ch = false;
+    if ((rec.kidsUpd || 0) > device.kidsUpd) { device.setKids(rec.kids ? (Array.isArray(rec.kids) ? rec.kids : Object.values(rec.kids)) : null, rec.kidsUpd); ch = true; }
+    if ((rec.nameUpd || 0) > device.nameUpd && rec.name) device.setName(rec.name, rec.nameUpd);
+    if (ch) { enforceDevice(); refreshAll(); }
+  },
   refresh: () => {
     migrateFamily(state);
     if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || "";
+    enforceDevice();
     ttsOn = !!prefs(cur()).tts; updTtsBtn();
     refreshAll();
+    maybeAskDevice();
     // a nyitott ⚙️ ablakot is frissítjük, kivéve ha a szülő épp egy mezőben gépel
     const a = document.activeElement;
     if (gearApi && !(a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) gearApi.draw();
@@ -83,6 +96,9 @@ function renderTop() {
   $("tb-name").textContent = u ? u.name : "Játékos";
   $("tb-pts").textContent = u ? u.pts : 0;
   $("tb-streak").textContent = u ? E.streakNow(u) : 0;
+  const lock = userLocked();
+  $("tb-user").classList.toggle("locked", lock);
+  $("tb-user").title = lock ? "Ezen az eszközön csak ez a játékos játszik (a szülő a ⚙️ Család fülön módosíthatja)" : "Játékos váltása";
 }
 
 // ---------- Kezdőképernyő ----------
@@ -138,8 +154,10 @@ function newPlayer(first = false, after = null) {
       const name = inp.value.trim().replace(/[.$#\[\]\/]/g, "");
       if (!name) return toast("Írd be a neved!");
       if (state.users[name]) return toast("Ilyen nevű játékos már van.");
-      const nu = E.newUser(name, av); nu.prefs = { ...(state.settings.childDefaults || {}) };
+      const nu = E.newUser(name, av); nu.prefs = { ...(state.settings.childDefaults || {}) }; nu.id = newId();
       state.users[name] = migrateUser(nu, state); state.current = name; delete state.deleted[name];
+      // ha ehhez az eszközhöz már meg van adva, ki játszik rajta, az új játékos is ide kerül
+      if (device.kids) { device.setKids([...device.kids, nu.id]); cloud.pushDevice(true); }
       save(); close(); ttsOn = !!prefs(cur()).tts; updTtsBtn(); refreshAll(); if (after) after();
     };
     inp.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
@@ -153,13 +171,62 @@ function switchPlayer() {
   modal((box, close) => {
     box.append(el("h3", null, "Ki játszik?"));
     const list = el("div", "userlist");
-    Object.values(state.users).forEach(u => list.append(btn(u.name === state.current ? "cur" : "", `<span style="font-size:28px">${u.avatar}</span> ${esc(u.name)} <span class="soft small" style="margin-left:auto">⛽ ${u.pts}</span>`, () => { state.current = u.name; persist(); close(); ttsOn = !!prefs(u).tts; updTtsBtn(); refreshAll(); })));
+    allowedUsers().forEach(u => list.append(btn(u.name === state.current ? "cur" : "", `<span style="font-size:28px">${u.avatar}</span> ${esc(u.name)} <span class="soft small" style="margin-left:auto">⛽ ${u.pts}</span>`, () => { state.current = u.name; persist(); close(); ttsOn = !!prefs(u).tts; updTtsBtn(); refreshAll(); })));
     box.append(list);
     const row = el("div", "mbtns");
-    row.append(btn("secondary", "➕ Új játékos", () => { close(); newPlayer(); }));
+    // ha az eszközhöz meg van adva, ki játszik rajta, új játékost csak a szülő vehet fel (⚙️ Család)
+    if (!device.kids) row.append(btn("secondary", "➕ Új játékos", () => { close(); newPlayer(); }));
     row.append(btn("primary", "Bezár", () => close()));
     box.append(row);
   });
+}
+
+// ---------- Eszköz: ki játszik ezen az eszközön? ----------
+// device.kids: a gyerekek belső azonosítói (u.id); null = nincs megadva, mindenki játszhat
+function allowedUsers() {
+  const all = Object.values(state.users), k = device.kids;
+  if (!k) return all;
+  const a = all.filter(u => k.includes(u.id));
+  return a.length ? a : all;   // ha a hozzárendelt gyerekek közben törlődtek, ne zárjuk ki az összeset
+}
+const userLocked = () => !!device.kids && allowedUsers().length <= 1 && Object.keys(state.users).length > 1;
+function enforceDevice() {
+  const a = allowedUsers();
+  if (a.length && !a.some(u => u.name === state.current)) { state.current = a[0].name; persist(); ttsOn = !!prefs(cur()).tts; updTtsBtn(); }
+}
+let deviceAsked = false;
+function maybeAskDevice() {
+  if (deviceAsked || device.kids || !cloud.settled || isModalOpen() || !$("scr-home").classList.contains("on")) return;
+  const us = Object.values(state.users);
+  if (!us.length) return;
+  if (us.length === 1) { device.setKids([us[0].id]); cloud.pushDevice(true); return; }
+  deviceAsked = true;
+  askDeviceKids();
+}
+function askDeviceKids() {
+  modal((box, close) => {
+    box.append(el("h3", null, "📱 Ki játszik ezen az eszközön?"));
+    box.append(el("p", null, `Eszköz: <b>${esc(device.name)}</b>`), el("p", "soft small", "Ha egy gyereket jelölsz be, a játék automatikusan őt indítja. Ha többet, csak közülük lehet választani. Később a ⚙️ → Család fülön módosíthatod."));
+    const list = el("div", "kidchecks");
+    Object.values(state.users).forEach(u => { const l = el("label", "kidcheck", `<input type="checkbox" value="${esc(u.id)}"> <span style="font-size:24px">${u.avatar}</span> ${esc(u.name)}`); list.append(l); });
+    box.append(list);
+    const row = el("div", "mbtns");
+    row.append(btn("secondary", "Később", () => close()));
+    row.append(btn("secondary", "Mindenki", () => list.querySelectorAll("input").forEach(i => { i.checked = true; })));
+    row.append(btn("primary", "Mentés 🔒", async () => {
+      const ids = [...list.querySelectorAll("input:checked")].map(i => i.value);
+      if (!ids.length) return toast("Jelölj be legalább egy gyereket – vagy válaszd a Később gombot.");
+      close();
+      if (!(await requirePin())) return;
+      device.setKids(ids); cloud.pushDevice(true); enforceDevice(); refreshAll();
+      toast("✅ Elmentve – ezen az eszközön: " + allowedUsers().map(u => esc(u.name)).join(", "));
+    }));
+    box.append(row);
+  });
+}
+function onUserClick() {
+  if (userLocked()) return toast(`📱 Ezen az eszközön <b>${esc(cur().name)}</b> játszik. A szülő a ⚙️ → Család fülön módosíthatja.`, 4000);
+  switchPlayer();
 }
 
 // ---------- Gyakorlás ----------
@@ -461,6 +528,7 @@ function celebrate(me) {
   });
 }
 function endRound() {
+  cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
   const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, T = typeById(S.T);
   if (mode !== "free") { toast(`Kör vége: ${ok}/${all} elsőre jó. 🚀`); return goHome(); }
   if (ok === all) confetti();
@@ -475,7 +543,7 @@ function endRound() {
     box.append(row);
   }, { esc: close => { close(); goHome(); } });
 }
-function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); }
+function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); cloud.checkpoint("home"); maybeAskDevice(); }
 
 // ---------- Szülői PIN ----------
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
@@ -510,6 +578,7 @@ let gearApi = null;
 async function openGear(startTab) {
   if (gearApi) return;
   if (!(await requirePin())) return;
+  cloud.checkpoint("gear");
   gearApi = openTabs({
     id: "parent", title: GAME.settingsTitle, startTab,
     tabs: parentTabs(app),
@@ -521,18 +590,65 @@ async function openGear(startTab) {
 async function deleteUser(name) {
   const ok = await ask({ title: `${name} törlése`, text: "Biztosan törlöd? Az összes eredménye elvész, és nem állítható vissza.", ok: "Törlöm", cancel: "Mégse" });
   if (!ok) return false;
-  const ts = Date.now(); state.deleted[name] = ts; delete state.users[name]; cloud.markDeleted(name, ts);
+  const ts = Date.now(), id = state.users[name] && state.users[name].id;
+  state.deleted[name] = ts; delete state.users[name]; cloud.markDeleted(name, ts);
+  if (device.kids && id) { device.setKids(device.kids.filter(x => x !== id).length ? device.kids.filter(x => x !== id) : null); cloud.pushDevice(true); }
   if (state.current === name) state.current = Object.keys(state.users)[0] || "";
   persist(); renderTop(); if ($("scr-home").classList.contains("on")) renderHome();
   if (!state.current) newPlayer(true);
   return true;
 }
+// Átnevezés: a gyerek új néven folytatja (a belső azonosító, így az eszköz-hozzárendelés is megmarad)
+async function renameUser(old) {
+  const u = state.users[old]; if (!u) return false;
+  const v = await ask({ title: `${old} átnevezése`, text: "Új név:", value: old, ok: "Átnevezés" });
+  if (v == null) return false;
+  const nu = v.trim().replace(/[.$#\[\]\/]/g, "").slice(0, 20);
+  if (!nu || nu === old) return false;
+  if (state.users[nu]) { toast("Ilyen nevű játékos már van."); return false; }
+  const ts = Date.now();
+  state.users[nu] = { ...u, name: nu, upd: ts }; delete state.users[old];
+  state.deleted[old] = ts; delete state.deleted[nu];
+  if (state.current === old) state.current = nu;
+  cloud.markDeleted(old, ts); persist(); cloud.queue(nu); refreshAll();
+  toast(`✅ Átnevezve: ${esc(nu)}`);
+  return true;
+}
+// Eszközlista a Család és a Felhő fülhöz (a felhőből, kiegészítve ennek az eszköznek a helyi adataival)
+async function devicesList() {
+  const remote = cloud.ready ? await cloud.fetchDevices() : null;
+  const list = Object.entries(remote || {}).map(([id, r]) => ({ id, name: r.name || r.model || id, model: r.model || "", lastSeen: r.lastSeen || 0, kids: r.kids ? (Array.isArray(r.kids) ? r.kids : Object.values(r.kids)) : null, syncMode: r.syncMode || "", traffic: r.traffic || {}, me: id === device.id }));
+  const mine = { id: device.id, name: device.name, model: guessName(), lastSeen: Date.now(), kids: device.kids, syncMode: device.syncMode, traffic: device.allTraffic, me: true };
+  const i = list.findIndex(d => d.me);
+  if (i >= 0) list[i] = { ...list[i], ...mine }; else list.unshift(mine);
+  list.sort((a, b) => (b.me - a.me) || (b.lastSeen - a.lastSeen));
+  return { list, fromCloud: !!remote };
+}
+function setDeviceKids(id, kids) {
+  const k = kids && kids.length ? [...new Set(kids)] : null, ts = Date.now();
+  if (id === device.id) { device.setKids(k, ts); enforceDevice(); refreshAll(); }
+  return cloud.updateDevice(id, { kids: k, kidsUpd: ts });
+}
+function renameDevice(id, name) {
+  const n = String(name || "").trim().slice(0, 40), ts = Date.now();
+  if (!n) return Promise.resolve(false);
+  if (id === device.id) device.setName(n, ts);
+  return cloud.updateDevice(id, { name: n, nameUpd: ts });
+}
+async function removeDevice(id, name) {
+  if (id === device.id) return false;
+  const ok = await ask({ title: "Eszköz törlése", text: `Törlöd a listából: <b>${esc(name)}</b>? Ha az eszközön újra megnyitják a játékot, új eszközként jelenik meg.`, ok: "Törlöm" });
+  return ok ? cloud.removeDevice(id) : false;
+}
 // A fülek ezen keresztül érik el az adatokat és a műveleteket (így a parent/tabs.js nem függ az app.js-től)
 const app = {
-  get state() { return state; }, E, TYPES, typeById, cloud,
-  saveUser, saveFamily, deleteUser, setNewPin,
+  get state() { return state; }, E, TYPES, typeById, cloud, device,
+  saveUser, saveFamily, deleteUser, renameUser, setNewPin,
   newPlayer: after => newPlayer(false, after),
   renderCloudInto: box => renderCloudInto(box),
+  fetchLogs: name => cloud.fetchLogs(name),
+  devicesList, setDeviceKids, renameDevice, removeDevice,
+  consoleUrl: FIREBASE_CONFIG && FIREBASE_CONFIG.projectId ? `https://console.firebase.google.com/project/${FIREBASE_CONFIG.projectId}/database` : "",
 };
 
 // ---------- Felhő panel ----------
@@ -568,7 +684,7 @@ function renderCloudInto(c) {
       box.append(el("p", "small", "Másik szülő hozzáadása (a Google-fiókja e-mail-címével):"), f);
     }
     const tools = el("div", "form-row");
-    if (cloud.ready) tools.append(btn("secondary", "⬆️ Mentés most", () => cloud.flush()));
+    if (cloud.ready) tools.append(btn("secondary", "⬆️ Mentés most", () => cloud.checkpoint("now")));
     tools.append(btn("secondary", "🔄 Újrakapcsolódás", () => cloud.reconnect()), btn("secondary", "🚪 Kilépés", () => cloud.signOut()));
     box.append(tools);
   }
@@ -587,7 +703,7 @@ function openCloud() {
     box.append(head);
     box.append(el("div", "cloud-live log-open"));
     const row = el("div", "mbtns");
-    if (cloud.ready) row.append(btn("secondary", "⬆️ Mentés most", () => cloud.flush()));
+    if (cloud.ready) row.append(btn("secondary", "⬆️ Mentés most", () => cloud.checkpoint("now")));
     if (cloud.configured && !cloud.user) row.append(btn("secondary", "Belépés Google-lel", () => { close(); cloud.signIn(); }));
     if (cloud.configured && cloud.user) row.append(btn("secondary", "🔄 Újrakapcsolódás", () => cloud.reconnect()));
     row.append(btn("primary", "Bezár", () => close()));
@@ -635,7 +751,7 @@ function updTtsBtn() { const b = $("play-tts"); b.textContent = ttsOn ? "🔊" :
 
 // ---------- Események ----------
 $("btn-mission").addEventListener("click", startMission);
-$("tb-user").addEventListener("click", switchPlayer);
+$("tb-user").addEventListener("click", onUserClick);
 $("tb-gear").addEventListener("click", () => openGear());
 $("tb-cloud").addEventListener("click", openCloud);
 $("tb-help").addEventListener("click", openHelp);
@@ -667,7 +783,9 @@ if (location.hash === "#debug") window.__urk = { S: () => S, state: () => state,
 // ---------- Indulás ----------
 updTtsBtn();
 if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || "";
+enforceDevice();
 renderTop(); renderHome();
 if (!state.current) newPlayer(true);
-cloud.init();
+device.ready.then(() => cloud.init());
+setTimeout(maybeAskDevice, 1500);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});

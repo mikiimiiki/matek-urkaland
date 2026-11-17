@@ -490,10 +490,12 @@ Minden ütem után élesítés (GitHub Pages), és a következő a jóváhagyás
 
 **Átvétel:**
 
-- [ ] A „Minden feladat után” módban egy feladat után 2 KB-nál kisebb feltöltés (a számláló szerint).
-- [ ] Egy régi (még nem frissült) eszköz írása nem törli az új mezőket.
+- [x] A „Minden feladat után” módban egy feladat után 2 KB-nál kisebb feltöltés (a számláló szerint).
+- [x] Egy régi (még nem frissült) eszköz írása nem törli az új mezőket.
 - [ ] Két böngészőben (két „eszköz”) a hozzárendelés és a játékosválasztó helyesen viselkedik.
 - [ ] 5 perc tétlenség után „💤 Szünetel”, visszatéréskor szinkronizál.
+
+> Megvalósítva (2026-11-17). Eltérések a tervtől: a családi beállítások felhőbeli helye marad `settings` (nem `family`), hogy a régi eszközök is lássák; az átvételi feltételeket a `tests/cloud.test.mjs` ál-Firebase-szel ellenőrzi, valódi két-eszközös próba élesben még hátravan.
 
 ### 3. ütem – Ranglétra és tárgyak (+2 nap)
 
