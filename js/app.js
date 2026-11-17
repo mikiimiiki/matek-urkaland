@@ -5,10 +5,14 @@ import { checkAnswer, parseNum, answerText, correctText, comboKey } from "./chec
 import * as E from "./engine.js";
 import { createCloud } from "./cloud.js";
 import { PLANET_INFO } from "./planet-info.js";
-
-const $ = id => document.getElementById(id);
-const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
-const btn = (cls, html, fn) => { const b = el("button", cls, html); b.type = "button"; if (fn) b.addEventListener("click", fn); return b; };
+import { $, el, btn, toast } from "./core/dom.js";
+import { modal, ask, isOpen as isModalOpen } from "./core/modal.js";
+import * as keys from "./core/keys.js";
+import { openTabs } from "./core/tabs.js";
+import { resolve } from "./core/settings.js";
+import { SETTINGS, GAME } from "./game/config.js";
+import { migrateFamily, migrateUser } from "./game/migrate.js";
+import { parentTabs } from "./parent/tabs.js";
 const rng = makeRng();
 
 // ---------- Állapot (helyben mindig mentünk; a felhő opcionális) ----------
@@ -17,47 +21,35 @@ let state = (() => { try { return JSON.parse(localStorage.getItem(STORE) || "nul
   || { familyCode: "", current: "", users: {}, settings: { ...E.DEFAULT_SETTINGS }, deleted: {} };
 state.settings = Object.assign({ ...E.DEFAULT_SETTINGS }, state.settings || {});
 state.deleted = state.deleted || {};
-Object.keys(state.users).forEach(n => { state.users[n] = E.normUser(state.users[n]); });
+migrateFamily(state);
+const normMig = u => migrateUser(E.normUser(u), state);
+Object.keys(state.users).forEach(n => { state.users[n] = normMig(state.users[n]); });
+// Gyerekenkénti beállítások: a gyerek saját értéke → családi alapérték → alapértelmezés
+const CHILD_DEFS = SETTINGS.filter(d => d.scope === "child");
+const prefs = u => Object.fromEntries(CHILD_DEFS.map(d => [d.key, resolve(d, u && u.prefs, state.settings.childDefaults)]));
 
 const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { console.warn(e); } };
 const cur = () => state.users[state.current];
 function save() { const u = cur(); if (u) u.upd = Date.now(); persist(); if (u) cloud.queue(u.name); }
+// A ⚙️ ablak fülei ezekkel mentenek
+function saveUser(u) { u.upd = Date.now(); persist(); cloud.queue(u.name); if (u === cur()) { ttsOn = !!prefs(u).tts; updTtsBtn(); } refreshAll(); }
+function saveFamily() { state.settings.upd = Date.now(); persist(); cloud.pushSettings(); refreshAll(); }
 
 const cloud = createCloud({
-  state: () => state, persist, normUser: E.normUser,
-  refresh: () => { if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || ""; refreshAll(); },
+  state: () => state, persist, normUser: normMig,
+  refresh: () => {
+    migrateFamily(state);
+    if (!state.users[state.current]) state.current = Object.keys(state.users)[0] || "";
+    ttsOn = !!prefs(cur()).tts; updTtsBtn();
+    refreshAll();
+    // a nyitott ⚙️ ablakot is frissítjük, kivéve ha a szülő épp egy mezőben gépel
+    const a = document.activeElement;
+    if (gearApi && !(a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))) gearApi.draw();
+  },
   onStatus: st => { $("tb-cloud-ic").textContent = st.icon; $("tb-sync").textContent = st.text; $("tb-cloud").className = "pill btn-pill " + (st.cls || ""); $("tb-cloud").title = st.detail; renderCloudLive(); },
 });
 
-// ---------- Kis segédek: felugró ablak, értesítés, konfetti, felolvasás ----------
-// esc: mit csináljon az Esc gomb, amíg az ablak nyitva van (alapból bezárja, mint a Mégse);
-// esc: false → az ablakot nem lehet Esc-kel bezárni (pl. az első játékos nevét kötelező megadni)
-let modalEsc = null;
-function modal(build, { onClose, esc } = {}) {
-  const m = $("modal"), box = m.firstElementChild;
-  box.innerHTML = ""; box.className = "modal-box";
-  const close = v => { m.classList.remove("on"); modalEsc = null; if (onClose) onClose(v); };
-  build(box, close);
-  modalEsc = esc === false ? false : () => (esc ? esc(close) : close());
-  m.classList.add("on");
-  const f = box.querySelector("input, button.primary"); if (f) setTimeout(() => f.focus(), 30);
-  return close;
-}
-function ask({ title, text = "", value = null, ok = "OK", cancel = "Mégse", secret = false, type = "text" }) {
-  let resolve;
-  return new Promise(res => { resolve = res; modal((box, close) => {
-    box.append(el("h3", null, esc(title)));
-    if (text) box.append(el("p", null, text));
-    let inp = null;
-    if (value !== null) { inp = el("input", "minp"); inp.value = value; inp.type = secret ? "password" : type; if (secret) inp.inputMode = "numeric"; box.append(inp); inp.addEventListener("keydown", e => { if (e.key === "Enter") { close(); res(inp.value); } }); }
-    const row = el("div", "mbtns");
-    if (cancel) row.append(btn("secondary", cancel, () => { close(); res(null); }));
-    row.append(btn("primary", ok, () => { close(); res(inp ? inp.value : true); }));
-    box.append(row);
-  }, { esc: close => { close(); resolve(null); } }); });
-}
-let toastT;
-function toast(msg, ms = 2800) { const t = $("toast"); t.innerHTML = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+// ---------- Konfetti, felolvasás ----------
 function confetti() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const cv = $("confetti"), ctx = cv.getContext("2d"); cv.width = innerWidth; cv.height = innerHeight;
@@ -76,14 +68,13 @@ function speak(html) {
   const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("hu")); if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
-let ttsOn = !!state.settings.tts;
+let ttsOn = !!prefs(cur()).tts;
 
 // ---------- Képernyők ----------
-function show(id) { document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); scrollTo(0, 0); }
+function show(id) { document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); scrollTo(0, 0); keys.setScreen(id === "scr-play" ? playKeys : homeKeys); }
 function refreshAll() {
   renderTop();
   if ($("scr-home").classList.contains("on")) renderHome();
-  if ($("scr-parent").classList.contains("on") && parentOpen) { fillChildSelect(); renderParent(); }
   if (cloudBox && cloudBox.isConnected) { cloudBox.innerHTML = ""; renderCloudInto(cloudBox); }
 }
 function renderTop() {
@@ -97,7 +88,7 @@ function renderTop() {
 // ---------- Kezdőképernyő ----------
 function renderHome() {
   const u = cur(); if (!u) return;
-  const s = state.settings, mp = E.missionProgress(u, s);
+  const s = prefs(u), mp = E.missionProgress(u, s);
   $("home-hello").textContent = `Szia, ${u.name}! ${mp.done ? "A mai küldetés kész – szabadon repülhetsz tovább! 🌟" : "Indulhat a mai küldetés?"}`;
   $("mission-sub").textContent = `${s.goalTasks} feladat vagy ${s.goalMin} perc – amelyik előbb teljesül`;
   $("map-hint").textContent = `– kattints egy bolygóra: ${freeSize()} feladatos gyakorló kör`;
@@ -112,7 +103,7 @@ function renderHome() {
   $("rank-next").textContent = rk.next ? `még ${rk.need} ⛽ a(z) „${rk.next}” rangig` : "Elérted a legmagasabb rangot!";
   $("rank-bar").style.width = Math.round(rk.pct * 100) + "%";
   // következő jutalom
-  const rb = $("reward-box"), rws = (s.rewards || []).map(r => ({ r, p: E.rewardProgress(u, r) })).filter(x => !x.p.claimed);
+  const rb = $("reward-box"), rws = (u.rewards || []).map(r => ({ r, p: E.rewardProgress(u, r) })).filter(x => !x.p.claimed);
   rb.hidden = !rws.length;
   if (rws.length) {
     const reached = rws.find(x => x.p.done), next = reached || rws.slice().sort((a, b) => b.p.pct - a.p.pct)[0];
@@ -133,7 +124,8 @@ function renderHome() {
 }
 
 // ---------- Játékosok ----------
-function newPlayer(first = false) {
+// first: az első játékos (nem zárható be); after: visszahívás mentés után (pl. a Család fül frissítése)
+function newPlayer(first = false, after = null) {
   let av = E.AVATARS[Object.keys(state.users).length % E.AVATARS.length];
   modal((box, close) => {
     box.append(el("h3", null, first ? "Üdv a Matek Űrkalandban! 🚀" : "Új játékos"));
@@ -146,8 +138,9 @@ function newPlayer(first = false) {
       const name = inp.value.trim().replace(/[.$#\[\]\/]/g, "");
       if (!name) return toast("Írd be a neved!");
       if (state.users[name]) return toast("Ilyen nevű játékos már van.");
-      state.users[name] = E.newUser(name, av); state.current = name; delete state.deleted[name];
-      save(); close(); refreshAll();
+      const nu = E.newUser(name, av); nu.prefs = { ...(state.settings.childDefaults || {}) };
+      state.users[name] = migrateUser(nu, state); state.current = name; delete state.deleted[name];
+      save(); close(); ttsOn = !!prefs(cur()).tts; updTtsBtn(); refreshAll(); if (after) after();
     };
     inp.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
     const row = el("div", "mbtns");
@@ -160,7 +153,7 @@ function switchPlayer() {
   modal((box, close) => {
     box.append(el("h3", null, "Ki játszik?"));
     const list = el("div", "userlist");
-    Object.values(state.users).forEach(u => list.append(btn(u.name === state.current ? "cur" : "", `<span style="font-size:28px">${u.avatar}</span> ${esc(u.name)} <span class="soft small" style="margin-left:auto">⛽ ${u.pts}</span>`, () => { state.current = u.name; persist(); close(); refreshAll(); })));
+    Object.values(state.users).forEach(u => list.append(btn(u.name === state.current ? "cur" : "", `<span style="font-size:28px">${u.avatar}</span> ${esc(u.name)} <span class="soft small" style="margin-left:auto">⛽ ${u.pts}</span>`, () => { state.current = u.name; persist(); close(); ttsOn = !!prefs(u).tts; updTtsBtn(); refreshAll(); })));
     box.append(list);
     const row = el("div", "mbtns");
     row.append(btn("secondary", "➕ Új játékos", () => { close(); newPlayer(); }));
@@ -172,8 +165,8 @@ function switchPlayer() {
 // ---------- Gyakorlás ----------
 let S = null; // aktuális kör
 function startMission() {
-  const u = cur(), mp = E.missionProgress(u, state.settings);
-  const n = mp.done ? 5 : Math.max(1, state.settings.goalTasks - mp.n);
+  const u = cur(), P = prefs(u), mp = E.missionProgress(u, P);
+  const n = mp.done ? 5 : Math.max(1, P.goalTasks - mp.n);
   S = { mode: "mission", plan: E.planMission(u, rng, n), idx: 0, res: [] };
   show("scr-play"); $("play-title").textContent = mp.done ? "🚀 Plusz kör" : "🚀 Napi küldetés";
   nextTask();
@@ -181,7 +174,7 @@ function startMission() {
 // Szabad gyakorlás: egy típusból rögzített hosszú kör (a szülő állítja: 3, 5 vagy 10 feladat).
 // Az altípust feladatonként, közvetlenül előtte választjuk, hogy a kör közben is a gyengébbek jöjjenek.
 const FREE_SIZES = [3, 5, 10]; // itt is megadjuk, hogy egy félig frissült böngésző-gyorsítótár se okozzon hibát
-const freeSize = () => FREE_SIZES.includes(+state.settings.freeTasks) ? +state.settings.freeTasks : 5;
+const freeSize = () => { const f = +prefs(cur()).freeTasks; return FREE_SIZES.includes(f) ? f : 5; };
 function startFree(T) {
   const n = freeSize();
   S = { mode: "free", T: T.id, plan: Array.from({ length: n }, () => ({ T: T.id, sub: null })), idx: 0, res: [] };
@@ -442,14 +435,14 @@ function nextButton(auto = false) {
   S.lockUntil = Date.now() + 400;
   clearTimeout(S.autoT);
   // ha közben felugró ablak jön (pl. küldetés teljesítve), nem lépünk tovább magától
-  if (auto) S.autoT = setTimeout(() => { if (S && S.task === t && S.phase === "done" && !$("modal").classList.contains("on")) go(); }, AUTO_NEXT_MS);
+  if (auto) S.autoT = setTimeout(() => { if (S && S.task === t && S.phase === "done" && !isModalOpen()) go(); }, AUTO_NEXT_MS);
 }
 function afterEvents(ev) {
   const u = cur();
   if (ev.star) { const T = typeById(ev.star.T); confetti(); toast(`⭐ Új csillag: ${T.planet.name}! ${ev.star.stars < 3 ? "Mostantól nehezebb feladatok jönnek." : "Mester lettél! 👑"}`, 4000); }
   ev.badges.forEach(b => toast(`${b.ic} Új jelvény: ${b.n}`, 3500));
   // napi küldetés teljesítése (feladatszám vagy idő alapján)
-  const mp = E.missionProgress(u, state.settings);
+  const mp = E.missionProgress(u, prefs(u));
   if (!mp.done && mp.pct >= 1) {
     const me = E.completeMission(u); save(); renderTop();
     if (me) setTimeout(() => celebrate(me), 700);
@@ -484,8 +477,7 @@ function endRound() {
 }
 function goHome() { if ("speechSynthesis" in window) speechSynthesis.cancel(); if (S) clearTimeout(S.autoT); S = null; show("scr-home"); renderTop(); renderHome(); }
 
-// ---------- Szülői felület ----------
-let parentOpen = false;
+// ---------- Szülői PIN ----------
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
 async function hashPin(pin, saltHex) {
   const salt = saltHex ? Uint8Array.from(saltHex.match(/../g).map(h => parseInt(h, 16))) : crypto.getRandomValues(new Uint8Array(16));
@@ -513,106 +505,35 @@ async function requirePin() {
   if (!ok) toast("❌ Hibás PIN.");
   return ok;
 }
-async function openParent() {
+// ---------- ⚙️ Szülői beállítások: 6 fülös ablak (PIN után) ----------
+let gearApi = null;
+async function openGear(startTab) {
+  if (gearApi) return;
   if (!(await requirePin())) return;
-  parentOpen = true; show("scr-parent");
-  fillChildSelect(); renderParent();
-}
-function fillChildSelect() {
-  const sel = $("parent-child"), keep = sel.value; sel.innerHTML = "";
-  Object.keys(state.users).forEach(n => { const o = el("option", null, esc(n)); o.value = n; sel.append(o); });
-  sel.value = state.users[keep] ? keep : state.current;
-}
-function renderParent() {
-  const sel = $("parent-child"), name = sel.value || state.current, u = state.users[name];
-  const body = $("parent-body"); body.innerHTML = "";
-  if (!u) { body.append(el("div", "card", "Még nincs játékos.")); return; }
-  const grid = el("div", "pgrid"); body.append(grid);
-  const card = (title, html) => { const c = el("section", "card pcard", `<h3>${title}</h3>`); if (html != null) c.insertAdjacentHTML("beforeend", html); grid.append(c); return c; };
-
-  // 1. Heti összefoglaló
-  const w = E.weekSummary(u), maxN = Math.max(1, ...w.days.map(d => d.n));
-  card("📅 Az elmúlt 7 nap", `<div class="kpis"><div class="kpi"><b>${w.active}/7</b><span>gyakorlós nap</span></div><div class="kpi"><b>${w.n}</b><span>feladat</span></div><div class="kpi"><b>${Math.round(w.ms / 60000)}</b><span>perc</span></div><div class="kpi"><b>${w.acc == null ? "–" : Math.round(w.acc * 100) + "%"}</b><span>elsőre jó</span></div></div>
-    <div class="weekbars">${w.days.map(d => `<div title="${d.key}: ${d.n} feladat, ${Math.round(d.ms / 60000)} perc"><i class="${d.done ? "done" : ""}" style="height:${Math.round(d.n / maxN * 90)}%"></i>${["V", "H", "K", "Sze", "Cs", "P", "Szo"][new Date(d.key).getDay()]}</div>`).join("")}</div>
-    <p class="legend">Zöld oszlop: aznap teljesítette a napi küldetést. Sorozat: 🔥 ${E.streakNow(u)} nap (legjobb: ${u.streak.best}). Összes pont: ⛽ ${u.pts}.</p>`);
-
-  // 2. Típusonkénti térkép
-  const rows = TYPES.map(T => {
-    const ts = E.typeState(u, T.id);
-    const chips = T.subs.map(s => { const st = u.subs[E.subKey(T.id, s.id)], a = st ? E.subAcc(st) : null; return `<span class="sc ${E.subColor(u, T.id, s.id)}" title="${st ? `${st.n} feladat, utóbbi ${st.last.length}-ból ${Math.round((a || 0) * 100)}% jó` : "még nem próbálta"}">${s.name}${st ? ` · ${Math.round((a || 0) * 100)}%` : ""}</span>`; }).join("");
-    return `<tr><td><b>${T.planet.emoji} ${T.name}</b><br><span class="soft small">${"⭐".repeat(ts.stars) || "–"} · ${E.typeLvl(u, T.id)}. szint</span></td><td>${chips}</td></tr>`;
-  }).join("");
-  card("🗺️ Miben erős, min kell még dolgozni?", `<table class="tmap">${rows}</table><p class="legend"><span class="sc green">megy</span> <span class="sc yellow">bizonytalan</span> <span class="sc red">gyenge – érdemes együtt átnézni</span> <span class="sc grey">még nem próbálta</span><br>A százalék az utolsó (legfeljebb 10) feladat elsőre jó aránya.</p>`);
-
-  // 3. Hibanapló
-  const log = u.log.slice(-40).reverse();
-  card("📝 Hibanapló", log.length ? `<div class="log">${log.map(l => { const T = typeById(l.T), s = T && T.subs.find(x => x.id === l.s); return `<div class="log-item"><div class="soft small">${new Date(l.t).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} · ${T ? T.name : l.T} – ${s ? s.name : l.s} · ${l.r === 2 ? "🟡 tipp után javította" : "🔴 magyarázat kellett"}</div><div class="lq">${esc(l.q)}</div><div class="la">Válasza: <b>${esc(l.a)}</b> · Helyes: <b>${esc(l.c)}</b>${l.w ? `<br>💡 ${esc(l.w)}` : ""}</div></div>`; }).join("")}</div>` : `<p class="soft">Még nincs hiba – vagy még nem gyakorolt. 🙂</p>`);
-
-  // 4. Próbafelvételi (2. ütem)
-  card("📈 Próbafelvételik", `<div class="placeholder">A 45 perces próbafelvételi mód az eredeti feladatsorokkal a következő ütemben érkezik.<br>Itt jelenik majd meg a pontszámok alakulása (50 pontos skálán).</div>`);
-
-  // 5. Jutalmak
-  const rc = card("🎁 Jutalmak");
-  const rlist = el("div");
-  (state.settings.rewards || []).forEach(r => {
-    const p = E.rewardProgress(u, r);
-    const row = el("div", "rw-item", `<span>${esc(r.text)} <span class="soft small">(${r.need} ${E.REWARD_KINDS[r.kind]} – most: ${p.have})</span></span>`);
-    const right = el("span");
-    if (p.claimed) right.append(el("span", "soft small", "✅ átadva"));
-    else if (p.done) right.append(btn("secondary", "Átadtam ✓", () => { u.claimed = u.claimed || {}; u.claimed[r.id] = Date.now(); u.upd = Date.now(); persist(); cloud.queue(u.name); renderParent(); }));
-    right.append(btn("ghost", "🗑️", () => { state.settings.rewards = state.settings.rewards.filter(x => x.id !== r.id); saveSettings(); }));
-    right.lastChild.style.color = "var(--bad)";
-    row.append(right); rlist.append(row);
+  gearApi = openTabs({
+    id: "parent", title: GAME.settingsTitle, startTab,
+    tabs: parentTabs(app),
+    children: () => Object.values(state.users).map(u => ({ id: u.name, label: `${u.avatar} ${esc(u.name)}` })),
+    startChild: state.current,
+    onClose: () => { gearApi = null; refreshAll(); },
   });
-  if (!(state.settings.rewards || []).length) rlist.append(el("p", "soft small", "Még nincs jutalom. Adj hozzá egyet – a gyerek a kezdőképernyőn látja, mennyi hiányzik még."));
-  rc.append(rlist);
-  const f = el("div", "form-row", `<input id="rw-text" placeholder="pl. Mozi 🎬" maxlength="40"><select id="rw-kind">${Object.entries(E.REWARD_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><input id="rw-need" type="number" min="1" value="500">`);
-  f.append(btn("primary", "Hozzáad", () => {
-    const text = $("rw-text").value.trim(), need = +$("rw-need").value;
-    if (!text || !(need > 0)) return toast("Add meg a jutalmat és a célt!");
-    state.settings.rewards = [...(state.settings.rewards || []), { id: "r" + Date.now().toString(36), text, kind: $("rw-kind").value, need }];
-    saveSettings();
-  }));
-  rc.append(f);
-
-  // 6. Beállítások
-  const sc = card("⚙️ Napi cél és beállítások");
-  sc.insertAdjacentHTML("beforeend", `<div class="form-row">Napi küldetés: <input id="set-tasks" type="number" min="3" max="40" value="${state.settings.goalTasks}"> feladat vagy <input id="set-min" type="number" min="5" max="60" value="${state.settings.goalMin}"> perc</div>
-    <div class="form-row">Szabad gyakorlás egy bolygón: <select id="set-free">${FREE_SIZES.map(n => `<option value="${n}" ${n === freeSize() ? "selected" : ""}>${n} feladat</option>`).join("")}</select> egy körben</div>
-    <div class="form-row"><label><input id="set-tts" type="checkbox" ${state.settings.tts ? "checked" : ""}> 🔊 Felolvasás alapból bekapcsolva</label></div>`);
-  sc.append(btn("primary", "Mentés", () => {
-    state.settings.goalTasks = Math.max(3, Math.min(40, +$("set-tasks").value || 10));
-    state.settings.goalMin = Math.max(5, Math.min(60, +$("set-min").value || 15));
-    state.settings.freeTasks = +$("set-free").value || 5;
-    state.settings.tts = $("set-tts").checked; ttsOn = state.settings.tts; updTtsBtn();
-    saveSettings(); toast("✅ Elmentve.");
-  }));
-  sc.append(el("p", "legend", "Tipp: hétvégére emelheted a célt (pl. 20 perc), hétköznap elég a 15 perc."));
-
-  // 7. Játékosok és PIN
-  const pc = card("👧 Játékosok és PIN");
-  Object.values(state.users).forEach(x => {
-    const row = el("div", "rw-item", `<span>${x.avatar} ${esc(x.name)} <span class="soft small">⛽ ${x.pts} · ${x.total} feladat</span></span>`);
-    row.append(btn("ghost", "🗑️ Törlés", async () => {
-      const ok = await ask({ title: `${x.name} törlése`, text: "Biztosan törlöd? Az összes eredménye elvész, és nem állítható vissza.", ok: "Törlöm", cancel: "Mégse" });
-      if (!ok) return;
-      const ts = Date.now(); state.deleted[x.name] = ts; delete state.users[x.name]; cloud.markDeleted(x.name, ts);
-      if (state.current === x.name) state.current = Object.keys(state.users)[0] || "";
-      persist(); fillChildSelect(); renderParent(); renderTop();
-      if (!state.current) newPlayer(true);
-    }));
-    row.lastChild.style.color = "var(--bad)";
-    pc.append(row);
-  });
-  const prow = el("div", "form-row");
-  prow.append(btn("secondary", "➕ Új játékos", () => newPlayer()), btn("secondary", "🔑 PIN módosítása", () => setNewPin()));
-  pc.append(prow);
-
-  // 8. Felhő
-  const cc = card("☁️ Felhős mentés");
-  renderCloudInto(cc);
 }
-function saveSettings() { state.settings.upd = Date.now(); persist(); cloud.pushSettings(); refreshAll(); }
+async function deleteUser(name) {
+  const ok = await ask({ title: `${name} törlése`, text: "Biztosan törlöd? Az összes eredménye elvész, és nem állítható vissza.", ok: "Törlöm", cancel: "Mégse" });
+  if (!ok) return false;
+  const ts = Date.now(); state.deleted[name] = ts; delete state.users[name]; cloud.markDeleted(name, ts);
+  if (state.current === name) state.current = Object.keys(state.users)[0] || "";
+  persist(); renderTop(); if ($("scr-home").classList.contains("on")) renderHome();
+  if (!state.current) newPlayer(true);
+  return true;
+}
+// A fülek ezen keresztül érik el az adatokat és a műveleteket (így a parent/tabs.js nem függ az app.js-től)
+const app = {
+  get state() { return state; }, E, TYPES, typeById, cloud,
+  saveUser, saveFamily, deleteUser, setNewPin,
+  newPlayer: after => newPlayer(false, after),
+  renderCloudInto: box => renderCloudInto(box),
+};
 
 // ---------- Felhő panel ----------
 // Élő állapot + eseménynapló: a ☁️ ablakban és a szülői felületen is látszik, és magától frissül
@@ -623,7 +544,7 @@ function renderCloudLive() {
     const ev = cloud.events.slice(-12).reverse();
     box.innerHTML = `<div class="cl-status ${st.cls || ""}"><span class="cl-ic">${st.icon}</span><div><b>${esc(st.text)}</b><div class="small">${esc(st.detail)}</div></div></div>`
       + (cloud.ready ? `<div class="small soft">Család: ${esc(cloud.familyCode.slice(0, 7))}… · Feltöltésre vár: ${cloud.pendingCount}</div>` : "")
-      + (ev.length ? `<details class="cl-log"${st.cls === "err" || st.cls === "warn" ? " open" : ""}><summary>Eseménynapló (${ev.length})</summary>${ev.map(e => `<div class="${e.err ? "bad" : ""}"><span class="soft">${new Date(e.t).toLocaleTimeString("hu-HU")}</span> ${e.icon} ${esc(e.text)}</div>`).join("")}</details>` : "");
+      + (ev.length ? `<details class="cl-log"${st.cls === "err" || st.cls === "warn" || box.classList.contains("log-open") ? " open" : ""}><summary>Eseménynapló (${ev.length})</summary>${ev.map(e => `<div class="${e.err ? "bad" : ""}"><span class="soft">${new Date(e.t).toLocaleTimeString("hu-HU")}</span> ${e.icon} ${esc(e.text)}</div>`).join("")}</details>` : "");
   });
 }
 function renderCloudInto(c) {
@@ -655,12 +576,24 @@ function renderCloudInto(c) {
   c.append(box);
   renderCloudLive();
 }
+// ☁️ kis ablak PIN nélkül: állapot, eseménynapló (nyitva), Mentés most, Újrakapcsolódás;
+// a ⚙️ gomb PIN után a beállítások Felhő fülére visz.
 function openCloud() {
   modal((box, close) => {
-    box.append(el("h3", null, "☁️ Felhős mentés"));
-    cloudBox = el("div"); box.append(cloudBox); renderCloudInto(cloudBox);
-    const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => { cloudBox = null; close(); })); box.append(row);
-  }, { esc: close => { cloudBox = null; close(); } });
+    const head = el("div", "tabs-head");
+    const gear = btn("ghost gear-jump", "⚙️", () => { close(); openGear("cloud"); });
+    gear.title = "Felhő beállítások (szülői PIN)"; gear.setAttribute("aria-label", gear.title);
+    head.append(el("h3", null, "☁️ Szinkron"), gear);
+    box.append(head);
+    box.append(el("div", "cloud-live log-open"));
+    const row = el("div", "mbtns");
+    if (cloud.ready) row.append(btn("secondary", "⬆️ Mentés most", () => cloud.flush()));
+    if (cloud.configured && !cloud.user) row.append(btn("secondary", "Belépés Google-lel", () => { close(); cloud.signIn(); }));
+    if (cloud.configured && cloud.user) row.append(btn("secondary", "🔄 Újrakapcsolódás", () => cloud.reconnect()));
+    row.append(btn("primary", "Bezár", () => close()));
+    box.append(row);
+    renderCloudLive();
+  });
 }
 
 // ---------- Súgó (F1): mi vár a bolygón? ----------
@@ -703,36 +636,30 @@ function updTtsBtn() { const b = $("play-tts"); b.textContent = ttsOn ? "🔊" :
 // ---------- Események ----------
 $("btn-mission").addEventListener("click", startMission);
 $("tb-user").addEventListener("click", switchPlayer);
-$("tb-parent").addEventListener("click", openParent);
+$("tb-gear").addEventListener("click", () => openGear());
 $("tb-cloud").addEventListener("click", openCloud);
 $("tb-help").addEventListener("click", openHelp);
 $("play-exit").addEventListener("click", goHome);
-$("parent-exit").addEventListener("click", () => { parentOpen = false; goHome(); });
-$("parent-child").addEventListener("change", renderParent);
 $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if (ttsOn && S && S.task) speak(S.task.q); else if ("speechSynthesis" in window) speechSynthesis.cancel(); });
-// Billentyűzet a kezdőképernyőn: Tab / Shift+Tab a küldetés gomb és a bolygók között lép (körbe-körbe),
-// Enter elindítja a kijelöltet (a gomb saját Enter-kezelése). F1: súgó a kijelölt bolygóról.
-document.addEventListener("keydown", e => {
-  if (e.key === "F1") { e.preventDefault(); if (!$("modal").classList.contains("on")) openHelp(); return; }
-  if (e.key !== "Tab" || $("modal").classList.contains("on") || !$("scr-home").classList.contains("on")) return;
-  const items = [$("btn-mission"), ...document.querySelectorAll("#map button.planet")];
-  if (!items.length) return;
-  e.preventDefault();
-  const i = items.indexOf(document.activeElement);
-  const next = i < 0 ? (e.shiftKey ? items.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + items.length) % items.length;
-  items[next].focus();
-  items[next].scrollIntoView({ block: "nearest", behavior: "smooth" });
-});
-// Esc: ha felugró ablak van nyitva, azt zárja be (mint a Mégse) – a képernyő marad;
-// különben bármelyik képernyőről (feladat, magyarázat, szülői felület) a főmenübe visz.
-document.addEventListener("keydown", e => {
-  if (e.key !== "Escape" || e.repeat) return;
-  e.preventDefault();
-  if ($("modal").classList.contains("on")) { if (modalEsc) modalEsc(); return; }
-  if ($("scr-parent").classList.contains("on")) { parentOpen = false; goHome(); }
-  else if ($("scr-play").classList.contains("on")) goHome();
-});
-document.addEventListener("keydown", e => { if (e.key === "Enter" && !e.defaultPrevented && !e.repeat && S && S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0) && !$("modal").classList.contains("on") && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); S.onNext(); } });
+// ---------- Gyorsbillentyűk (közös modul: core/keys.js) ----------
+// Kezdőlap: Tab / Shift+Tab a küldetés gomb és a bolygók között lép körbe, Enter indít (a gomb saját kezelése),
+// F1: súgó a kijelölt bolygóról. Felugró ablakban az ablak saját kontextusa érvényes (Esc = Mégse).
+const homeKeys = {
+  id: "home",
+  items: () => [$("btn-mission"), ...document.querySelectorAll("#map button.planet")],
+  onF1: () => openHelp(),
+};
+// Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a bolygó súgója.
+const playKeys = {
+  id: "play",
+  onEnter: a => {
+    if (S && S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0) && !(a && a.tagName === "BUTTON")) { S.onNext(); return true; }
+    return false;
+  },
+  onEsc: () => goHome(),
+  onF1: () => openHelp(),
+};
+keys.setScreen(homeKeys);
 
 // Tesztelési segéd: a #debug címmel megnyitva a konzolból elérhető az aktuális kör
 if (location.hash === "#debug") window.__urk = { S: () => S, state: () => state, show: (T, sub, lvl) => { S = S || { mode: "free", T, plan: [], idx: 0, res: [] }; S.T = T; show("scr-play"); const t = makeTask(typeById(T), sub, lvl, rng); S.task = t; S.twin = false; S.tries = 0; S.t0 = Date.now(); S.phase = "answer"; S.sel = []; S.set = []; S.clicked = null; renderTask(); } };

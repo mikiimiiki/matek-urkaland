@@ -1,10 +1,11 @@
 // ===== Játékmotor: haladás, csillagok, ismétlés, napi küldetés, sorozat, jelvények =====
 // DOM nélküli, tiszta logika – Node-ban is tesztelhető.
 import { TYPES, typeById, subsFor } from "./types/index.js";
+import { dayNum, dateKey } from "./core/dates.js";
+import { histAdd } from "./core/progress.js";
 
-// ---- Napok ----
-export const dayNum = (d = new Date()) => Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 864e5);
-export const dateKey = n => new Date(n * 864e5).toISOString().slice(0, 10);
+// ---- Napok (a közös keretből; itt is elérhetők a régi importok miatt) ----
+export { dayNum, dateKey };
 const weekOf = day => Math.floor((day + 3) / 7); // hétfőtől vasárnapig (1970.01.01. csütörtök volt)
 
 // ---- Alapértékek ----
@@ -97,6 +98,7 @@ export function record(u, task, r, ms, opts = {}) {
   u.total++; if (r === 1) u.correct++;
   const d = (u.days[dateKey(today)] = u.days[dateKey(today)] || { n: 0, ok: 0, ms: 0, done: false });
   d.n++; if (r === 1) d.ok++; d.ms += Math.min(ms || 0, 180000);
+  histAdd(u, task.type, r === 1, ms, today); // napi, bolygónkénti statisztika a Fejlődés fülhöz
   if (r !== 1) {
     u.log.push({ t: Date.now(), T: task.type, s: task.sub, lvl: task.lvl, r, q: opts.q || "", a: opts.a || "", c: opts.c || "", w: opts.w || "" });
     if (u.log.length > 120) u.log.splice(0, u.log.length - 120);

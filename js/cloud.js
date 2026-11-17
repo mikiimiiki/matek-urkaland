@@ -206,7 +206,8 @@ export function createCloud(api) {
         Object.entries(remote).forEach(([k, r]) => {
           const name = r.name || k, l = st.users[name];
           if ((st.deleted || {})[name] >= (r.upd || 0)) return;
-          if (!l || (r.upd || 0) > (l.upd || 0)) { st.users[name] = api.normUser(r); changed++; }
+          // összefésülés: a felhő mezői nyernek, de a csak helyben meglévő (pl. újabb változat által bevezetett) mezők megmaradnak
+          if (!l || (r.upd || 0) > (l.upd || 0)) { st.users[name] = api.normUser(l ? { ...l, ...r } : r); changed++; }
         });
       } finally { applying = false; }
       api.persist();

@@ -26,7 +26,7 @@
     <div class="tb-right">
       <button id="tb-cloud" class="pill btn-pill" type="button" title="Felhős mentés"><span id="tb-cloud-ic">☁️</span> <span id="tb-sync">Helyi mód</span></button>
       <button id="tb-help" class="pill btn-pill" type="button" title="Súgó (F1)">❓ Súgó</button>
-      <button id="tb-parent" class="pill btn-pill" type="button" title="Szülői felület">👪 Szülő</button>
+      <button id="tb-gear" class="pill btn-pill gear" type="button" title="Szülői beállítások (PIN)" aria-label="Szülői beállítások">⚙️</button>
     </div>
   </header>
 
@@ -96,18 +96,7 @@
     </div>
   </main>
 
-  <!-- Szülői felület -->
-  <main id="scr-parent" class="screen">
-    <div class="play-head">
-      <button id="parent-exit" class="ghost" type="button">✕ Vissza</button>
-      <div class="play-title">Szülői felület</div>
-      <select id="parent-child" aria-label="Gyerek kiválasztása"></select>
-    </div>
-    <div id="parent-body"></div>
-  </main>
-
-  <!-- Felugró ablak, értesítés, konfetti -->
-  <div id="modal" class="modal" role="dialog" aria-modal="true"><div class="modal-box"></div></div>
+  <!-- Értesítés, konfetti (a felugró ablakokat a js/core/modal.js hozza létre) -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
