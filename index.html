@@ -33,7 +33,7 @@
   <!-- Kezdőképernyő: küldetés + bolygótérkép -->
   <main id="scr-home" class="screen on">
     <section class="hero">
-      <div class="mascot" aria-hidden="true">🚀</div>
+      <div class="mascot" id="mascot" aria-hidden="true">🚀</div>
       <h1>Matek Űrkaland</h1>
       <p class="hello" id="home-hello">Szia!</p>
     </section>
@@ -51,9 +51,10 @@
     </section>
 
     <section class="rankrow">
-      <div class="card rankbox">
-        <div class="rank-top"><b id="rank-name">Űrkadét</b><span class="soft small" id="rank-next"></span></div>
+      <div class="card rankbox" id="rankbox" role="button" tabindex="0" title="Ranglétra és szekrény (Enter)">
+        <div class="rank-top"><b id="rank-name">Űrkadét</b><span class="rank-more">Ranglétra ›</span></div>
         <div class="bar"><i id="rank-bar"></i></div>
+        <p class="soft small rank-next" id="rank-next"></p>
       </div>
       <div class="card rewardbox" id="reward-box" hidden></div>
     </section>

@@ -98,6 +98,7 @@ export function record(u, task, r, ms, opts = {}) {
   u.total++; if (r === 1) u.correct++;
   const d = (u.days[dateKey(today)] = u.days[dateKey(today)] || { n: 0, ok: 0, ms: 0, done: false });
   d.n++; if (r === 1) d.ok++; d.ms += Math.min(ms || 0, 180000);
+  d.pts = (d.pts || 0) + ev.pts; // napi ⛽ – a rangablak „kb. Y nap” becsléséhez
   histAdd(u, task.type, r === 1, ms, today); // napi, bolygónkénti statisztika a Fejlődés fülhöz
   if (r !== 1) {
     // az időbélyeg a bejegyzés kulcsa a felhőben → mindig egyedi
@@ -147,12 +148,7 @@ export function streakNow(u, today = dayNum()) {
 export const shieldAvailable = (u, today = dayNum()) => !u.shields[weekOf(today)];
 
 // ---- Rangok és jelvények ----
-export const RANKS = [[0, "Űrkadét"], [300, "Pilóta"], [800, "Navigátor"], [1600, "Kapitány"], [3000, "Parancsnok"], [5000, "Galaxis-admirális"]];
-export function rankOf(pts) {
-  let i = 0; while (i + 1 < RANKS.length && pts >= RANKS[i + 1][0]) i++;
-  const next = RANKS[i + 1];
-  return { name: RANKS[i][1], next: next ? next[1] : null, pct: next ? (pts - RANKS[i][0]) / (next[0] - RANKS[i][0]) : 1, need: next ? next[0] - pts : 0 };
-}
+// A ranglétra a game/ranks.js-ben van (12 rang, kinyitható tárgyakkal).
 const doneDays = u => Object.values(u.days).filter(d => d.done).length;
 const starsTotal = u => Object.values(u.types).reduce((a, t) => a + t.stars, 0);
 export const BADGES = [

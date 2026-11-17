@@ -1,11 +1,11 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v19";
+const VERSION = "urkaland-v20";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/app.js", "js/planet-info.js", "js/engine.js", "js/check.js", "js/util.js", "js/cloud.js", "js/firebase-config.js",
   "js/core/dates.js", "js/core/dom.js", "js/core/keys.js", "js/core/modal.js", "js/core/tabs.js", "js/core/settings.js", "js/core/progress.js", "js/core/charts.js", "js/core/syncdiff.js", "js/core/device.js",
-  "js/game/config.js", "js/game/migrate.js", "js/parent/tabs.js",
+  "js/game/config.js", "js/game/migrate.js", "js/game/ranks.js", "js/game/cosmetics-catalog.js", "js/core/cosmetics.js", "js/parent/tabs.js",
   "js/types/index.js", "js/types/t1_szamok.js", "js/types/t3_mertekegyseg.js", "js/types/t5_diagram.js", "js/types/t8_minta.js", "js/types/t4_ido.js", "js/types/t6_kombinatorika.js", "js/types/t10_szoveges.js", "js/types/t9_penz.js", "js/types/t13_szabaly.js", "js/types/t2_muveletek.js", "js/types/t7_logika.js", "js/types/t12_sikidomok.js", "js/types/t11_kockak.js", "js/types/t14_lehetseges.js", "js/types/t15_halmaz.js",
 ];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

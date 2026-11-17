@@ -15,6 +15,9 @@ import { resolve } from "./core/settings.js";
 import { SETTINGS, GAME } from "./game/config.js";
 import { migrateFamily, migrateUser, newId } from "./game/migrate.js";
 import { parentTabs } from "./parent/tabs.js";
+import { RANKS, rankOf, rankIndex, rankItems, unlockRank, daysTo } from "./game/ranks.js";
+import { ITEMS, KINDS, DEFAULTS, itemById } from "./game/cosmetics-catalog.js";
+import { unlockedSet, equipped, applyVars, swapClass } from "./core/cosmetics.js";
 const rng = makeRng();
 
 // ---------- Állapot (helyben mindig mentünk; a felhő opcionális) ----------
@@ -65,11 +68,26 @@ const cloud = createCloud({
 // ---------- Konfetti, felolvasás ----------
 function confetti() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const u = cur(), C = itemById(u ? look(u).confetti : DEFAULTS.confetti) || itemById(DEFAULTS.confetti);
   const cv = $("confetti"), ctx = cv.getContext("2d"); cv.width = innerWidth; cv.height = innerHeight;
-  const cols = ["#7c3aed", "#ec4899", "#f59e0b", "#22c55e", "#06b6d4", "#facc15"];
+  const cols = C.colors, star = C.shape === "star";
   const ps = Array.from({ length: 150 }, () => ({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5, vx: Math.random() * 4 - 2, vy: 2 + Math.random() * 4, s: 6 + Math.random() * 6, c: cols[Math.random() * cols.length | 0], r: Math.random() * 6 }));
+  const drawStar = s => { ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = Math.PI / 5 * k, rr = k % 2 ? s / 2.4 : s; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); };
   const t0 = performance.now();
-  (function frame(t) { ctx.clearRect(0, 0, cv.width, cv.height); ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }); if (t - t0 < 2800) requestAnimationFrame(frame); else ctx.clearRect(0, 0, cv.width, cv.height); })(t0);
+  (function frame(t) { ctx.clearRect(0, 0, cv.width, cv.height); ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); if (star) drawStar(p.s * .8); else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }); if (t - t0 < 2800) requestAnimationFrame(frame); else ctx.clearRect(0, 0, cv.width, cv.height); })(t0);
+}
+
+// ---------- Kinyitható tárgyak: mi van kinyitva, mi van felvéve ----------
+const unlocked = u => unlockedSet(rankItems(u.pts), u.owned);
+function look(u) {
+  const un = unlocked(u), c = u.cosmetics || {};
+  return Object.fromEntries(["bg", "rocket", "confetti", "frame"].map(k => [k, equipped(c[k], k, un, DEFAULTS)]));
+}
+function applyLook() {
+  const u = cur(), L = u ? look(u) : DEFAULTS;
+  applyVars((itemById(L.bg) || itemById(DEFAULTS.bg)).vars);
+  swapClass($("mascot"), "rk-", (itemById(L.rocket) || {}).cls);
+  swapClass($("tb-user"), "fr-", (itemById(L.frame) || {}).cls);
 }
 const speechText = html => plain(String(html).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<table[\s\S]*?<\/table>/g, " "))
   .replace(/·/g, " szorozva ").replace(/ : /g, " osztva ").replace(/−/g, " mínusz ").replace(/→/g, ", ").replace(/≥/g, " nagyobb vagy egyenlő ").replace(/&lt;|</g, " kisebb ");
@@ -93,7 +111,8 @@ function refreshAll() {
 function renderTop() {
   const u = cur();
   $("tb-avatar").textContent = u ? u.avatar : "🧑‍🚀";
-  $("tb-name").textContent = u ? u.name : "Játékos";
+  $("tb-name").innerHTML = u ? esc(u.name) + (RANKS[rankIndex(u.pts)].title ? `<span class="legend-tag">${RANKS[rankIndex(u.pts)].title}</span>` : "") : "Játékos";
+  applyLook();
   $("tb-pts").textContent = u ? u.pts : 0;
   $("tb-streak").textContent = u ? E.streakNow(u) : 0;
   const lock = userLocked();
@@ -114,9 +133,9 @@ function renderHome() {
   const st = E.streakNow(u);
   $("mission-note").textContent = mp.done ? `✅ Ma már ${mp.n} feladatot oldottál meg. Sorozat: ${st} nap 🔥`
     : `Ma: ${mp.n} feladat, ${mp.min} perc. ${st ? `🔥 ${st} napos sorozat – ne szakítsd meg!` : "Kezdj egy új sorozatot!"} ${E.shieldAvailable(u) ? "🛡️ A heti pajzsod még megvan." : ""}`;
-  const rk = E.rankOf(u.pts);
-  $("rank-name").textContent = `🧑‍🚀 ${rk.name}`;
-  $("rank-next").textContent = rk.next ? `még ${rk.need} ⛽ a(z) „${rk.next}” rangig` : "Elérted a legmagasabb rangot!";
+  const rk = rankOf(u.pts);
+  $("rank-name").textContent = `🧑‍🚀 ${rk.name} (${rk.n}/${rk.total})`;
+  $("rank-next").innerHTML = rk.next ? `még <b>${rk.need} ⛽</b> a(z) „${esc(rk.next)}” rangig – kb. ${daysTo(u, rk.need)} nap <span class="rank-peek">· 🎁 ${rk.nextRank.unlocks.map(itemIcon).join(" ")}</span>` : "Elérted a legmagasabb rangot! 🌟";
   $("rank-bar").style.width = Math.round(rk.pct * 100) + "%";
   // következő jutalom
   const rb = $("reward-box"), rws = (u.rewards || []).map(r => ({ r, p: E.rewardProgress(u, r) })).filter(x => !x.p.claimed);
@@ -142,14 +161,15 @@ function renderHome() {
 // ---------- Játékosok ----------
 // first: az első játékos (nem zárható be); after: visszahívás mentés után (pl. a Család fül frissítése)
 function newPlayer(first = false, after = null) {
-  let av = E.AVATARS[Object.keys(state.users).length % E.AVATARS.length];
+  const START = RANKS[0].unlocks.filter(id => id.startsWith("av:")).map(id => id.slice(3));
+  let av = START[Object.keys(state.users).length % START.length];
   modal((box, close) => {
     box.append(el("h3", null, first ? "Üdv a Matek Űrkalandban! 🚀" : "Új játékos"));
     box.append(el("p", null, "Hogy hívnak? Válassz egy űrhajóst is!"));
     const inp = el("input", "minp"); inp.maxLength = 20; inp.placeholder = "Neved"; box.append(inp);
     const avs = el("div", "avatars");
-    E.AVATARS.forEach(a => { const b = btn(a === av ? "sel" : "", a, () => { av = a; avs.querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b)); }); avs.append(b); });
-    box.append(avs);
+    START.forEach(a => { const b = btn(a === av ? "sel" : "", a, () => { av = a; avs.querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b)); }); avs.append(b); });
+    box.append(avs, el("p", "soft small", "🎁 Gyakorlással újabb avatarokat, hátteret és rakétát nyithatsz ki!"));
     const go = () => {
       const name = inp.value.trim().replace(/[.$#\[\]\/]/g, "");
       if (!name) return toast("Írd be a neved!");
@@ -508,6 +528,8 @@ function afterEvents(ev) {
   const u = cur();
   if (ev.star) { const T = typeById(ev.star.T); confetti(); toast(`⭐ Új csillag: ${T.planet.name}! ${ev.star.stars < 3 ? "Mostantól nehezebb feladatok jönnek." : "Mester lettél! 👑"}`, 4000); }
   ev.badges.forEach(b => toast(`${b.ic} Új jelvény: ${b.n}`, 3500));
+  const rb = rankIndex(u.pts - ev.pts), ra = rankIndex(u.pts);
+  if (ra > rb) setTimeout(() => celebrateRank(ra), 1200);
   // napi küldetés teljesítése (feladatszám vagy idő alapján)
   const mp = E.missionProgress(u, prefs(u));
   if (!mp.done && mp.pct >= 1) {
@@ -527,6 +549,72 @@ function celebrate(me) {
     box.append(row);
   });
 }
+// ---------- Ranglétra és szekrény ----------
+const itemIcon = id => { const it = itemById(id); if (!it) return ""; if (it.kind === "bg") return "🌌"; return it.show || ""; };
+function celebrateRank(i) {
+  const R = RANKS[i];
+  confetti();
+  modal((box, close) => {
+    box.classList.add("celebrate");
+    box.append(el("div", "big-emoji", "🎉"), el("h3", null, `Új rang: ${esc(R.name)}!`),
+      el("p", null, `Kinyitottad: <b>${R.unlocks.map(id => `${itemIcon(id)} ${esc(itemById(id).label)}`).join(", ")}</b>${R.title ? `<br>…és mostantól a neved mellett ott a <span class="legend-tag">${R.title}</span> felirat!` : ""}`),
+      el("p", "soft small", "Kipróbálod? A szekrényben bármikor átöltözhetsz."));
+    const row = el("div", "mbtns"); row.style.justifyContent = "center";
+    row.append(btn("secondary", "Később", () => close()), btn("primary", "Kipróbálom ✨", () => { close(); openRanks(itemById(R.unlocks[0]).kind); }));
+    box.append(row);
+  });
+}
+// A rangablak: felül a rang és a becslés, alatta a 12 rangos létra, lent a szekrény
+let wardrobeKind = "av";
+function openRanks(kind) {
+  const u = cur(); if (!u) return;
+  if (kind) wardrobeKind = kind;
+  modal((box, close) => {
+    const draw = () => {
+      const rk = rankOf(u.pts), un = unlocked(u), L = look(u);
+      box.innerHTML = "";
+      const head = el("div", "tabs-head");
+      head.append(el("h3", null, "🪜 Ranglétra és szekrény"), btn("ghost tabs-x", "✕", () => close()));
+      box.append(head);
+      box.append(el("div", "rk-head", `<div class="rk-big">${u.avatar}</div><div style="flex:1"><h3>🧑‍🚀 ${esc(rk.name)} <span class="soft small">(${rk.n}/${rk.total})</span></h3><div class="bar"><i style="width:${Math.round(rk.pct * 100)}%"></i></div><p class="small">${rk.next ? `Még <b>${rk.need} ⛽</b> a(z) „${esc(rk.next)}” rangig – <b>kb. ${daysTo(u, rk.need)} nap</b> gyakorlás (az utolsó 7 nap tempójával).` : "Elérted a legmagasabb rangot! Te vagy a Csillagflotta legendája! 🌟"}</p></div>`));
+      // létra
+      box.append(el("h4", "psub", "🪜 A ranglétra"));
+      const lad = el("div", "ladder");
+      RANKS.forEach((R, i) => {
+        const st = i <= rk.i ? "done" : i === rk.i + 1 ? "next" : "locked";
+        lad.append(el("div", "rcard " + st, `<div class="rn">${i + 1}. rang · ${R.pts} ⛽</div><div class="rname">${esc(R.name)}</div>${st === "next" ? `<div class="rhint">Ezt nyitod ki következőnek!</div>` : ""}<div class="runl" title="${esc(R.unlocks.map(id => itemById(id).label).join(", "))}">${R.unlocks.map(itemIcon).join("")}${R.title ? "🏅" : ""}</div>`));
+      });
+      box.append(lad);
+      // szekrény
+      box.append(el("h4", "psub", "👕 Szekrény – kattints, és felveszed!"));
+      const seg = el("div", "segs");
+      KINDS.forEach(K => seg.append(btn("seg" + (K.id === wardrobeKind ? " on" : ""), `${K.icon} ${K.label}`, () => { wardrobeKind = K.id; draw(); box.querySelector(".segs .seg.on")?.focus(); })));
+      box.append(seg);
+      const grid = el("div", "wardrobe");
+      const cur0 = wardrobeKind === "av" ? "av:" + u.avatar : L[wardrobeKind];
+      const items = ITEMS.filter(it => it.kind === wardrobeKind).concat((u.owned || []).filter(id => id.startsWith(wardrobeKind + ":") && !itemById(id)).map(id => ({ id, kind: wardrobeKind, label: "Különleges", show: id.slice(wardrobeKind.length + 1), value: id.slice(wardrobeKind.length + 1) })));
+      items.forEach(it => {
+        const open = un.has(it.id), from = unlockRank(it.id);
+        let face = `<span class="wic">${it.show || ""}</span>`;
+        if (it.kind === "bg") face = `<span class="wsw" style="background:radial-gradient(circle at 70% 0, ${it.vars.glow}, transparent 70%), linear-gradient(180deg, ${it.vars.space2}, ${it.vars.space1})"></span>`;
+        if (it.kind === "frame") face = `<span class="wfr" style="box-shadow:${it.cls === "fr-gold" ? "0 0 0 3px #facc15, 0 0 10px #facc15" : it.cls === "fr-silver" ? "0 0 0 3px #e2e8f0, 0 0 8px #e2e8f0" : "none"}">${esc(u.name)}</span>`;
+        const b = btn("witem" + (it.id === cur0 ? " on" : ""), `${face}${esc(it.label)}${!from ? `<span class="wtag">🎄 különleges</span>` : ""}${open ? "" : `<span class="wlock">🔒 ${esc(from ? from.name : "?")} rangnál nyílik</span>`}`, () => {
+          if (!open) return;
+          u.cosmetics = u.cosmetics || {};
+          if (it.kind === "av") { u.avatar = it.value; u.cosmetics.avatar = it.value; } else u.cosmetics[it.kind] = it.id;
+          saveUser(u); draw(); toast(`✨ Felvetted: ${esc(it.label)}`);
+          box.querySelector(".wardrobe .witem.on")?.focus();
+        });
+        b.disabled = !open; b.title = open ? `${it.label} – felvétel` : `🔒 ${from ? from.name : ""} rangnál nyílik`;
+        grid.append(b);
+      });
+      box.append(grid);
+      const row = el("div", "mbtns"); row.append(btn("primary", "Bezár", () => close())); box.append(row);
+    };
+    draw();
+  }, { cls: "wide ranks-modal" });
+}
+
 function endRound() {
   cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
   const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, T = typeById(S.T);
@@ -751,6 +839,8 @@ function updTtsBtn() { const b = $("play-tts"); b.textContent = ttsOn ? "🔊" :
 
 // ---------- Események ----------
 $("btn-mission").addEventListener("click", startMission);
+$("rankbox").addEventListener("click", () => openRanks());
+$("rankbox").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && !e.repeat) { e.preventDefault(); openRanks(); } });
 $("tb-user").addEventListener("click", onUserClick);
 $("tb-gear").addEventListener("click", () => openGear());
 $("tb-cloud").addEventListener("click", openCloud);
@@ -762,7 +852,7 @@ $("play-tts").addEventListener("click", () => { ttsOn = !ttsOn; updTtsBtn(); if 
 // F1: súgó a kijelölt bolygóról. Felugró ablakban az ablak saját kontextusa érvényes (Esc = Mégse).
 const homeKeys = {
   id: "home",
-  items: () => [$("btn-mission"), ...document.querySelectorAll("#map button.planet")],
+  items: () => [$("btn-mission"), $("rankbox"), ...document.querySelectorAll("#map button.planet")],
   onF1: () => openHelp(),
 };
 // Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a bolygó súgója.

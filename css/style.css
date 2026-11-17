@@ -1,6 +1,6 @@
 /* ===== Matek Űrkaland – stílusok ===== */
 :root {
-  --space1: #0b1026; --space2: #1e1b4b;          /* űr háttér */
+  --space1: #0b1026; --space2: #1e1b4b; --glow: #3b2a8a; /* űr háttér (a választott háttér felülírja) */
   --ink: #1e293b; --soft: #64748b;               /* szöveg a kártyákon */
   --card: #ffffff; --line: #e2e8f0;
   --pri: #7c3aed; --pri2: #a78bfa; --pri-soft: #ede9fe;
@@ -14,7 +14,7 @@
 html, body { margin: 0; min-height: 100%; }
 body {
   font-family: "Nunito", "Segoe UI", system-ui, sans-serif; font-size: 18px; color: var(--ink);
-  background: radial-gradient(1200px 700px at 80% -10%, #3b2a8a 0%, transparent 60%), linear-gradient(180deg, var(--space2), var(--space1));
+  background: radial-gradient(1200px 700px at 80% -10%, var(--glow) 0%, transparent 60%), linear-gradient(180deg, var(--space2), var(--space1));
   background-attachment: fixed; overflow-x: hidden;
 }
 #stars { position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -78,6 +78,50 @@ h1 { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #c4b5
 .mission.done .bar > i { background: linear-gradient(90deg, #86efac, #16a34a); }
 .rankrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; max-width: 760px; margin: 14px auto 0; }
 .rank-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+/* --- Ranglétra, szekrény, kinyitható tárgyak --- */
+.rankbox { cursor: pointer; transition: transform .1s, box-shadow .1s; }
+.rankbox:hover { transform: translateY(-2px); }
+.rankbox:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+.rank-more { color: var(--pri); font-weight: 800; font-size: 14px; }
+.rank-next { margin: 6px 0 0; }
+.rank-peek { white-space: nowrap; }
+.rk-gold { filter: sepia(1) saturate(5) hue-rotate(5deg) brightness(1.15) drop-shadow(0 0 10px #facc15); }
+.rk-rainbow { animation: fly 3s ease-in-out infinite, rainbow 4s linear infinite; }
+@keyframes rainbow { from { filter: hue-rotate(0deg) drop-shadow(0 0 8px #f0abfc); } to { filter: hue-rotate(360deg) drop-shadow(0 0 8px #f0abfc); } }
+#tb-user.fr-silver { box-shadow: 0 0 0 3px #e2e8f0, 0 0 12px rgba(226,232,240,.7); }
+#tb-user.fr-gold { box-shadow: 0 0 0 3px #facc15, 0 0 16px rgba(250,204,21,.8); }
+.legend-tag { background: linear-gradient(90deg, #facc15, #f472b6); color: #1e1b4b; border-radius: 8px; padding: 0 6px; font-size: 12px; font-weight: 900; margin-left: 4px; vertical-align: middle; }
+.ranks-modal { max-width: 900px; }
+.rk-head { display: flex; gap: 16px; align-items: center; }
+.rk-big { font-size: 64px; line-height: 1; }
+.rk-head h3 { margin: 0; }
+.rk-head .bar { margin-top: 8px; }
+.rk-head p { margin: 6px 0 0; }
+.ladder { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.rcard { border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; position: relative; background: #fff; }
+.rcard .rn { font-size: 12px; color: var(--soft); font-weight: 800; }
+.rcard .rname { font-weight: 900; }
+.rcard .rpts { font-size: 13px; color: var(--soft); }
+.rcard .runl { font-size: 22px; margin-top: 4px; letter-spacing: 2px; }
+.rcard.done { border-color: #bbf7d0; background: #f0fdf4; }
+.rcard.done::after { content: "✓"; position: absolute; right: 8px; top: 6px; color: var(--ok); font-weight: 900; }
+.rcard.next { border-color: var(--pri); background: var(--pri-soft); box-shadow: 0 0 0 3px #ddd6fe; }
+.rcard.next .rhint { font-size: 12px; font-weight: 800; color: var(--pri); }
+.rcard.locked { background: #f8fafc; }
+.rcard.locked .runl { filter: grayscale(1) blur(1px); opacity: .6; }
+.rcard.locked .rname::before { content: "🔒 "; }
+.wardrobe { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 8px; }
+.witem { border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 8px; text-align: center; font-weight: 800; font-size: 13px; position: relative; }
+.witem .wic { font-size: 30px; display: block; line-height: 1.3; }
+.witem .wsw { display: block; height: 38px; border-radius: 10px; margin-bottom: 4px; }
+.witem .wfr { display: inline-block; padding: 2px 10px; border-radius: 10px; background: #1e1b4b; color: #fff; margin: 6px 0; }
+.witem.on { border-color: var(--pri); background: var(--pri-soft); }
+.witem.on::after { content: "✓"; position: absolute; right: 6px; top: 4px; color: var(--pri); }
+.witem:disabled { cursor: not-allowed; background: #f8fafc; color: var(--soft); }
+.witem:disabled .wic, .witem:disabled .wsw, .witem:disabled .wfr { filter: grayscale(1) blur(1px); opacity: .55; }
+.witem .wlock { display: block; font-size: 11px; font-weight: 700; }
+.wtag { display: block; font-size: 11px; color: #b91c1c; }
+@media (max-width: 640px) { .rk-big { font-size: 46px; } .ladder { grid-template-columns: repeat(2, 1fr); } }
 .rewardbox b { color: var(--pri); }
 
 /* Bolygótérkép */

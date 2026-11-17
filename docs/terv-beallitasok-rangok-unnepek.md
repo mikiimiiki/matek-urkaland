@@ -504,9 +504,11 @@ Minden ütem után élesítés (GitHub Pages), és a következő a jóváhagyás
 
 **Átvétel:**
 
-- [ ] A meglévő játékos a ⛽-je szerinti rangot kapja, a régi avatarja megmarad.
-- [ ] Zárt tárgy nem választható; a kinyitott azonnal megjelenik.
-- [ ] A „kb. Y nap” az utolsó 7 nap átlagából számolódik.
+- [x] A meglévő játékos a ⛽-je szerinti rangot kapja, a régi avatarja megmarad.
+- [x] Zárt tárgy nem választható; a kinyitott azonnal megjelenik.
+- [x] A „kb. Y nap” az utolsó 7 nap átlagából számolódik.
+
+> Megvalósítva (2026-11-17), ellenőrzés: `tests/ranks.test.mjs` és böngészőben (rangablak, szekrény, rangemelés ünneplése, arany rakéta).
 
 ### 4. ütem – Ünnepek (november 28-ig)
 
