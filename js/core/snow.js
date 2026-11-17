@@ -1,12 +1,12 @@
 // ===== Hóesés a háttérben – kis terheléssel =====
 // Egy rögzített canvas a tartalom mögött; háttérbe került lapon és „csökkentett mozgás” beállításnál nem fut.
-let cv = null, raf = 0, flakes = [], on = false;
+let cv = null, raf = 0, flakes = [], on = false, color = "rgba(255,255,255,.85)";
 
 function frame() {
   if (!on) return;
   const ctx = cv.getContext("2d"), w = cv.width, h = cv.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "rgba(255,255,255,.85)";
+  ctx.fillStyle = color;
   flakes.forEach(f => {
     f.y += f.v; f.x += Math.sin((f.y + f.p) / 40) * 0.4;
     if (f.y > h + 5) { f.y = -5; f.x = Math.random() * w; }
@@ -16,7 +16,9 @@ function frame() {
   raf = requestAnimationFrame(frame);
 }
 function resize() { if (cv) { cv.width = innerWidth; cv.height = innerHeight; } }
-export function setSnow(want) {
+// opts.color: a hópelyhek színe (világos háttéren pl. kékes)
+export function setSnow(want, opts = {}) {
+  if (opts.color) color = opts.color;
   const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   want = !!want && !reduced;
   if (want === on) return on;
