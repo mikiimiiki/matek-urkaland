@@ -252,6 +252,17 @@ b.big { font-size: 1.35em; color: var(--pri); }
 .step { position: relative; padding: 10px 12px 10px 46px; border-radius: 14px; background: #f8fafc; margin-bottom: 10px; line-height: 1.5; animation: pop .3s ease-out; }
 .step::before { counter-increment: st; content: counter(st); position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; border-radius: 50%; background: var(--pri); color: #fff; font-weight: 900; display: grid; place-items: center; font-size: 15px; }
 @keyframes pop { from { opacity: 0; transform: translateY(8px); } }
+/* ✍️ Beíró ablak: animáció nélkül (iPaden a billentyűzet csak azonnali fókusznál nyílik) */
+.modal-box.retype-box { max-width: 460px; text-align: center; animation: none; }
+.rt-label { font-weight: 800; color: var(--soft); font-size: 17px; }
+.rt-word { font-size: 38px; font-weight: 900; margin: 6px 0 10px; letter-spacing: .02em; word-break: break-word; }
+.rt-in { display: block; width: 100%; box-sizing: border-box; font: inherit; font-size: 26px; font-weight: 800; text-align: center; padding: 10px 12px; border: 3px solid var(--line, #e2e8f0); border-radius: 16px; user-select: text; -webkit-user-select: text; }
+.rt-in:focus { outline: none; border-color: var(--pri, #7c3aed); }
+.rt-in.bad { border-color: var(--bad, #dc2626); background: #fef2f2; }
+.rt-in.ok { border-color: var(--ok, #16a34a); background: #dcfce7; }
+.rt-btns { justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.rt-btns button:disabled { opacity: .45; cursor: default; }
+.rt-skip { font-size: 14px; opacity: .8; }
 .yours { font-size: 15px; color: var(--soft); margin-bottom: 8px; }
 .yours b { color: var(--bad); }
 

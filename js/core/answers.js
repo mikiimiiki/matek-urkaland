@@ -5,6 +5,14 @@ import { dayNum, dateKey } from "./dates.js";
 import { histAdd } from "./progress.js";
 
 export const LOG_MAX = 120;
+// Utólagos jutalompont egy már rögzített válaszhoz (pl. a helyes alak beírásáért): a pont és a napi ⛽ is nő
+export function addBonus(u, pts, today = dayNum()) {
+  if (!pts) return;
+  u.pts = (u.pts || 0) + pts;
+  const d = (u.days[dateKey(today)] = u.days[dateKey(today)] || { n: 0, ok: 0, ms: 0, done: false });
+  d.pts = (d.pts || 0) + pts;
+  u.upd = Date.now();
+}
 // o: { topic, r (1/2/0), ms, pts, twin, log: { s, lvl, q, a, c, w } }
 export function recordAnswer(u, o, today = dayNum()) {
   const ok = o.r === 1;
@@ -21,4 +29,12 @@ export function recordAnswer(u, o, today = dayNum()) {
     if (u.log.length > LOG_MAX) u.log.splice(0, u.log.length - LOG_MAX);
   }
   u.upd = Date.now();
+}
+
+// A helyes alak beírása: betűre pontos egyezés (ékezet, hosszú mássalhangzó), de a kis/nagybetű, a szélső szóköz
+// és az Unicode-alak (pl. iPad: szétbontott ékezet) mindegy. Állapot: "ok" (kész) | "" (eddig jó) | "bad" (eltér).
+export const retypeNorm = s => String(s ?? "").normalize("NFC").trim().toLocaleLowerCase("hu");
+export function retypeState(typed, target) {
+  const a = retypeNorm(typed), b = retypeNorm(target);
+  return a === b ? "ok" : b.startsWith(a) ? "" : "bad";
 }

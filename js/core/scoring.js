@@ -4,7 +4,8 @@ export const SCORING = {
   first: 10,                 // elsőre jó
   levelBonus: { 2: 2, 3: 5 },// szintbónusz elsőre jó válaszhoz
   second: 5,                 // tipp vagy második próba után jó
-  explained: 2,              // hibás, de végignézte a magyarázatot (vagy újraírta a szót)
+  explained: 2,              // hibás, de végignézte a magyarázatot
+  retype: 1,                 // hibás válasz után helyesen beírta a jó alakot (+1 a magyarázat 2 pontjához)
   combo: 3, comboFrom: 3,    // sorozatbónusz a 3. egymást követő elsőre jó választól
   twin: 3,                   // hibából tanulás: az ikerfeladat jó
   help: 3, helpMin: 2,       // segítségenként −3, de legalább 2

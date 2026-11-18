@@ -2,8 +2,8 @@
 // A feladatot a csomag adja (pack.makeTask), a váz végzi a visszajelzést, a pontozást és a rögzítést.
 import { $, el, btn, toast, escHtml as esc } from "../core/dom.js";
 import { modal, isOpen as isModalOpen } from "../core/modal.js";
-import { score } from "../core/scoring.js";
-import { recordAnswer } from "../core/answers.js";
+import { score, SCORING } from "../core/scoring.js";
+import { recordAnswer, addBonus, retypeState } from "../core/answers.js";
 import { checkBadges, COMMON_BADGES } from "../core/badges.js";
 import { missionProgress, completeMission, addCorrect, giftPending } from "../core/dailygoal.js";
 import { C, G, cur, prefs, save, confetti, speak } from "./ctx.js";
@@ -127,16 +127,20 @@ function explain(v) {
     else {
       S.ui.showCorrect();
       // Ikerfeladat: az első hiba után EGY hasonló feladat kötelező. Ha már az ikerfeladat sem sikerült,
-      // a gyerek választhat: továbblép, vagy még gyakorol egy hasonlóval (nem ragad bele végtelen körbe).
+      // a gyerek választhat: továbbléphet, vagy még gyakorol egy hasonlóval (nem ragad bele végtelen körbe).
       const twin = () => { S.plan.splice(S.idx, 0, { topic: t.topic, sub: t.sub, level: t.level, twin: true }); nextTask(); };
       const next = () => nextTask();
-      if (!S.twin) { setActions([btn("primary big", "🔁 Próbáld ki egy hasonlóval!", twin)]); S.onNext = twin; }
+      let acts;
+      if (!S.twin) acts = [{ label: "🔁 Próbáld ki egy hasonlóval!", fn: twin, primary: true }];
       else {
         const last = S.idx >= S.plan.length;
-        setActions([btn("primary big", last ? "Kész! 🏁" : "Következő feladat ▶", next), btn("secondary big", "🔁 Még egy hasonló", twin)]);
-        S.onNext = next;
+        acts = [{ label: last ? "Kész! 🏁" : "Következő feladat ▶", fn: next, primary: true }, { label: "🔁 Még egy hasonló", fn: twin }];
         box.append(el("div", "fb hint", "Ez most nehéz volt – semmi baj! Választhatsz: továbbmehetsz, vagy gyakorolhatsz még egy hasonlóval. Ez a feladattípus pár nap múlva úgyis visszajön."));
       }
+      const showActs = () => { setActions(acts.map(a => btn((a.primary ? "primary" : "secondary") + " big", a.label, a.fn))); S.onNext = acts[0].fn; };
+      const mode = t.retype ? (prefs(cur()).retype || "must") : "off";
+      // a beíró ablak MOST, ebben a koppintás-kezelőben nyílik (iPaden csak így ugrik fel a billentyűzet)
+      if (mode === "off") showActs(); else openRetype(t, acts, mode, showActs);
     }
     box.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
@@ -233,5 +237,41 @@ export const playKeys = {
   // minden más billentyű a feladat felületéé (pl. betűgépelés a betűkirakón, 1–4 a választós gomboknál)
   onKey: e => !!(S && S.ui && S.ui.onKey && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "") && S.ui.onKey(e)),
 };
+// ---------- ✍️ A helyes alak beírása (hibás válasz és magyarázat után) ----------
+// mode: "must" (kötelező) | "skip" (kihagyható). Középen nyílik; a továbblépő gomb(ok) csak a helyes beírás után aktívak.
+// Egyezés: betűre pontosan (ékezet, hosszú mássalhangzó), de a kis/nagybetű, a szélső szóköz és az Unicode-alak mindegy.
+function openRetype(t, acts, mode, showActs) {
+  let done = false;
+  modal((box, close) => {
+    box.classList.add("retype-box");
+    box.append(el("div", "rt-label", "✍️ Írd le a helyes alakot:"), el("div", "rt-word", esc(t.retype)));
+    const inp = el("input", "rt-in");
+    Object.assign(inp, { type: "text", autocomplete: "off", spellcheck: false, placeholder: "Írd le ide…" });
+    inp.setAttribute("autocapitalize", "off"); inp.setAttribute("autocorrect", "off"); inp.setAttribute("enterkeyhint", "done");
+    inp.setAttribute("aria-label", "Írd le a helyes alakot: " + t.retype);
+    const row = el("div", "mbtns rt-btns");
+    const bs = acts.map(a => { const b = btn((a.primary ? "primary" : "secondary") + " big", a.label, () => { if (!done) return; close(); a.fn(); }); b.disabled = true; return b; });
+    if (mode === "skip") row.append(btn("ghost rt-skip", "Kihagyom", () => { close(); showActs(); }));
+    row.append(...bs);
+    box.append(inp, row);
+    const update = () => {
+      const st = retypeState(inp.value, t.retype);
+      inp.classList.toggle("ok", st === "ok"); inp.classList.toggle("bad", st === "bad");
+      if (st === "ok" && !done) {
+        done = true; bs.forEach(b => { b.disabled = false; });
+        const u = cur(), pts = (G().scoring || SCORING).retype ?? SCORING.retype, R = G().ranks, rb = R.rankIndex(u.pts);
+        addBonus(u, pts); save(); renderTop();
+        toast(`✍️ Ügyes! +${pts} ${G().pointsIcon}`);
+        if (R.rankIndex(u.pts) > rb) setTimeout(() => celebrateRank(R.rankIndex(u.pts)), 1200);
+      }
+    };
+    inp.addEventListener("input", update);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (done) bs[0].click(); } });
+    inp.focus(); // azonnal, a gyerek koppintásának kezelőjében – így nyílik meg iPaden a billentyűzet
+  }, { esc: close => { close(); goHome(); } });   // Esc: ki a körből a főmenübe (a beírás nem kerülhető meg)
+  // a háttérben is a helyes továbblépés álljon készen (ha az ablak valamiért bezárulna)
+  setActions([]); S.onNext = null;
+}
+
 // Teszteléshez (#debug): egy adott feladat megnyitása
 export function debugShow(item) { S = S || { mode: "free", topic: item.topic, plan: [], idx: 0, res: [], combo: 0 }; S.topic = item.topic; S.plan.splice(S.idx, 0, item); show("scr-play"); nextTask(); }

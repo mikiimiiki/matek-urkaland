@@ -6,6 +6,14 @@ export function settingsDefs(G, P) {
     // gyakorlás
     { key: "freeTasks", group: "play", scope: "child", type: "select", options: [3, 5, 10], default: d.freeTasks ?? 5, unit: "feladat", label: "Szabad gyakorlás egy körben", help: `Ennyi feladatból áll egy kör, ha a gyerek egy ${topic} kattint.` },
     { key: "tts", group: "play", scope: "child", type: "toggle", default: false, label: "🔊 Felolvasás alapból bekapcsolva", help: "A feladatot és a magyarázatot a gép felolvassa (a 🔊 gombbal a gyakorlásban is kapcsolható)." },
+    // a helyes alak beírása hibás válasz után: csak olyan játékban látszik, amelynek a csomagja kér beírást (PACK.retype)
+    ...(P && P.retype ? [{ key: "retype", group: "play", scope: "child", type: "radio", default: d.retype ?? "must", label: "✍️ Hibás válasz után a helyes alak beírása",
+      help: "A magyarázat után középen felugrik egy ablak: a gyerek beírja a helyes alakot (+1 pont), és csak utána léphet tovább.",
+      options: [
+        { value: "must", label: "Kötelező (ajánlott)", help: "Csak a helyes beírás után lehet továbblépni." },
+        { value: "skip", label: "Kihagyható", help: "Egy „Kihagyom” gombbal továbbléphet (akkor nem jár a +1 pont)." },
+        { value: "off", label: "Kikapcsolt", help: "Nincs beírás, a magyarázat után rögtön jön a következő lépés." },
+      ] }] : []),
     { key: "dyslexia", group: "play", scope: "child", type: "toggle", default: false, label: "🔤 Diszlexia-barát betűtípus", help: "Jobban tagolt, könnyebben olvasható betűk és nagyobb betűköz." },
     // napi cél és szorzók
     { key: "goalTasks", group: "goal", scope: "child", type: "number", min: 3, max: 40, default: d.goalTasks ?? 10, unit: "feladat", label: "Napi küldetés – feladatok száma", help: "Ennyi feladat után teljesül a napi küldetés (vagy az alábbi idő után, ha az előbb telik le). Ez viszi a napos sorozatot." },
