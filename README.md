@@ -106,4 +106,4 @@ A program váza közös és paraméterezhető; appankként csak a feladatok és 
 
 A `tests/shell.test.mjs` azt is ellenőrzi, hogy a `js/core` és a `js/shell` nem hivatkozik matekos fogalomra.
 
-**A közös keret forrása az `urkaland-keret` repó** (a `Felvételi_matek` mellett: `../urkaland-keret`). A `js/core`, `js/shell`, `css/style.css` és `tests/keret.test.mjs` fájlokat itt nem szerkesztjük: a keret-repóban változtatunk, majd `node tools/keret-masolas.mjs ../Felvételi_matek` másolja át őket. A `KERET_VERZIO` fájl rögzíti a verziót és az ujjlenyomatot; a `node tests/keret.test.mjs` jelzi, ha a másolatot kézzel átírták.
+**A közös keret forrása a `keretrendszer` repó** (a `Felvételi_matek` mellett: `../keretrendszer`). A `js/core`, `js/shell`, `css/style.css` és `tests/keret.test.mjs` fájlokat itt nem szerkesztjük: a keret-repóban változtatunk, majd `node tools/keret-masolas.mjs ../Felvételi_matek` másolja át őket. A `KERET_VERZIO` fájl rögzíti a verziót és az ujjlenyomatot; a `node tests/keret.test.mjs` jelzi, ha a másolatot kézzel átírták.
