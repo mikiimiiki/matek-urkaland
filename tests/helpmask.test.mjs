@@ -27,6 +27,10 @@ ok(maskAnswer("A 618 a 610 és a 620 között van.", { kind: "num", value: 618 }
 ok(maskAnswer("15:05 → 15:20", { kind: "time", value: 920 }, "Mikor érkezett?") === "15:05 → ?", "kitakarás: időpont");
 
 // minden altípus és szint
+// ahol mindkét jelölt szándékosan látszik (a döntés – fel vagy le – a feladat lényege)
+const BOTH_SHOWN = new Set(["T1.kerekites"]);
+// ezeknél a súgó ábráján nem lehet kiemelve a helyes oszlop / eredmény
+const NO_HL = { "T5.szelso": /fill="var\(--pri\)"/, "T5.szures": /fill="var\(--pri\)"/, "T5.kozepso": /fill="var\(--pri\)"/, "T1.kerekites": /var\(--ok\)/, "T1.szomszed": /var\(--ok\)/ };
 const bad = [];
 let checked = 0;
 for (const T of TYPES) for (const S of T.subs) for (let lvl = 1; lvl <= 3; lvl++) {
@@ -34,11 +38,14 @@ for (const T of TYPES) for (const S of T.subs) for (let lvl = 1; lvl <= 3; lvl++
   for (let i = 0; i < N; i++) {
     const t = makeTask(T, S.id, lvl, makeRng(i * 7919 + lvl * 104729 + 17));
     const q = t.q + " " + (t.viz || "");
-    const hs = helpSteps(t.steps, t.ans, q, T.id + "." + S.id);
+    const key = T.id + "." + S.id, hs = helpSteps(t.steps, t.ans, q, key, t.help);
     if (hs.length >= t.steps.length) { bad.push(`${T.id}.${S.id}.L${lvl}: a súgó az utolsó lépést is mutatná`); break; }
-    const vis = (hs.length ? hs : [t.hint]).join(" ");
-    const hit = forms(t.ans).find(f => has(vis, f) && !has(q, f));
+    // mintás feladatok (T8): az ábra sorszámai csak véletlenül egyeznek a válasszal, azokat nem nézzük
+    const vis = (hs.length ? hs : [t.hint]).join(" ").replace(/^T8\./.test(key) ? /<svg[\s\S]*?<\/svg>/g : /$^/, " ");
+    const hit = BOTH_SHOWN.has(key) ? null : forms(t.ans).find(f => has(vis, f) && !has(q, f));
     checked++;
+    if (NO_HL[key] && NO_HL[key].test(hs.join(""))) { bad.push(`${key}.L${lvl}: a súgó ábráján ki van emelve a válasz`); break; }
+    if (BOTH_SHOWN.has(key) && /\?/.test(plain(hs[0] || ""))) { bad.push(`${key}.L${lvl}: a kitakarás „?”-lel árulja el, melyik a válasz`); break; }
     if (hit) { bad.push(`${T.id}.${S.id}.L${lvl}: „${hit}” látszik a súgóban – ${plain(t.q).slice(0, 80)}`); break; }
   }
 }

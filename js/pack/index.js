@@ -57,7 +57,7 @@ export const PACK = {
         return { ok: r.ok, feedback };
       },
       hint: t.hint, steps: t.steps,
-      helpSteps: helpSteps(t.steps, A, t.q + " " + (t.viz || ""), T.id + "." + sub), // a ❓ súgó: a végeredmény nélkül, kitakarva
+      helpSteps: helpSteps(t.steps, A, t.q + " " + (t.viz || ""), T.id + "." + sub, t.help), // a ❓ súgó: a végeredmény nélkül, kitakarva
       why: v => { try { return t.why ? t.why(v) : null; } catch { return null; } },
       answerText: v => answerText(A, v), correctText: correctText(A),
       speech: t.q, plainQ: speechText(t.q).slice(0, 220),

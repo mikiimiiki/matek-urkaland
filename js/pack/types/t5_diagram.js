@@ -184,6 +184,7 @@ function gen(sub, rng, lvl) {
     const max = rng.chance(0.5), t = max ? Math.max(...vals) : Math.min(...vals), i = vals.indexOf(t);
     return { ...base, sub, q: C.most[max ? 0 : 1], viz: chart(C, cats, vals, { grid }), ans: { kind: "choice", options: cats.slice(), value: i },
       steps: [`${max ? "A leghosszabb" : "A legrövidebb"} oszlopot keressük.` + chart(C, cats, vals, { grid, hl: [i], show: [i] }), `A válasz: <b class="big">${cats[i]}</b> (${fmt(t)}${u})`],
+      help: [`${max ? "A leghosszabb" : "A legrövidebb"} oszlopot keressük: melyik oszlop vége van ${max ? "a legmesszebb jobbra" : "a legközelebb a nullához"}?` + chart(C, cats, vals, { grid }), ""],
       why: k => { const w = vals[k]; return w === (max ? Math.min(...vals) : Math.max(...vals)) ? `Ez éppen a ${max ? "legkisebb" : "legnagyobb"} – a kérdés a ${max ? "legnagyobbat" : "legkisebbet"} kéri.` : null; } };
   }
   if (sub === "szures") {
@@ -196,6 +197,7 @@ function gen(sub, rng, lvl) {
       if (!sol.length || sol.length === n) continue;
       return { ...base, sub, q: C.filt(a, b) + ` <b>Jelöld meg az összeset!</b>`, viz: chart(C, cats, vals, { grid }), ans: { kind: "pick", options: cats.slice(), value: sol },
         hint: `Húzz gondolatban két függőleges vonalat ${article(a)} ${fmt(a)} és ${article(b)} ${fmt(b)} értéknél! Mely oszlopok vége esik a kettő közé?`,
+        help: [`Húzzunk két vonalat: ${fmt(a)}${u} és ${fmt(b)}${u}. Azok az oszlopok jók, amelyeknek a vége a két vonal <b>közé</b> esik.` + chart(C, cats, vals, { grid, marks: [a, b] }), "", ""],
         steps: [`Húzzunk két vonalat: ${fmt(a)}${u} és ${fmt(b)}${u}.` + chart(C, cats, vals, { grid, marks: [a, b], hl: sol }), `Azok az oszlopok jók, amelyeknek a vége a két vonal <b>közé</b> esik.` + (lvl === 3 && (vals.includes(a) || vals.includes(b)) ? " Figyelj: ami pontosan a vonalon van, az nem „több” és nem „kevesebb”!" : ""), `A megoldás: <b class="big">${sol.map(i => cats[i]).join(", ")}</b>`],
         why: ks => { const bad = ks.filter(k => !sol.includes(k)); return bad.length ? bad.map(k => `${cap(C.the(cats[k]))}: ${fmt(vals[k])}${u} – ez nincs ${fmt(a)} és ${fmt(b)} között.`).join("<br>") : null; } };
     }
@@ -218,6 +220,7 @@ function gen(sub, rng, lvl) {
     const m = cats.length, order = [...Array(m).keys()].sort((a, b) => vals[a] - vals[b]), mid = order[(m - 1) / 2];
     return { ...base, sub, q: C.mid, viz: chart(C, cats, vals, { grid }), ans: { kind: "choice", options: cats.slice(), value: mid },
       hint: "Rendezd sorba az oszlopokat a legrövidebbtől a leghosszabbig! Középen az áll, akitől mindkét irányban ugyanannyian vannak.",
+      help: [`Rendezzük sorba az oszlopokat a legrövidebbtől a leghosszabbig!` + chart(C, cats, vals, { grid }), `${m} elem van, a középső a <b>${(m + 1) / 2}.</b> – előtte is, utána is ${(m - 1) / 2} van.`, ""],
       steps: [`Rendezzük sorba a legkisebbtől a legnagyobbig:<br>` + order.map(i => `${cats[i]} (${fmt(vals[i])})`).join(" &lt; "), `${m} elem van, a középső a <b>${(m + 1) / 2}.</b> – előtte is, utána is ${(m - 1) / 2} van.` + chart(C, cats, vals, { grid, hl: [mid], show: [mid] }), `A válasz: <b class="big">${cats[mid]}</b>`],
       why: k => k === order[0] || k === order[m - 1] ? "Ez a sor egyik szélén áll, nem középen." : null };
   }

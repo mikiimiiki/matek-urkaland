@@ -29,12 +29,16 @@ export function answerPatterns(A) {
 const re = (pats, flags) => new RegExp(`(^|[^${W}])(?:${pats.join("|")})(?![${W}])`, flags);
 
 // A lépés HTML-jében a válasz minden előfordulását „?”-re cseréli (csak a szövegrészekben)
-export function maskAnswer(html, A, question = "") {
+export function maskAnswer(html, A, question = "", { svg = true } = {}) {
   const q = plain(question);
   const pats = answerPatterns(A).filter(p => !re([p], "").test(q));
   if (!pats.length) return html;
   const R = re(pats, "g");
-  return String(html).split(/(<[^>]*>)/).map(part => part.startsWith("<") ? part : part.replace(R, (m, pre) => pre + "?")).join("");
+  let inSvg = 0; // svg: false → az ábrákon (pl. sorszámozott minták címkéi) nem takarunk
+  return String(html).split(/(<[^>]*>)/).map(part => {
+    if (part.startsWith("<")) { if (/^<svg\b/i.test(part)) inSvg++; else if (/^<\/svg>/i.test(part)) inSvg = Math.max(0, inSvg - 1); return part; }
+    return !svg && inSvg ? part : part.replace(R, (m, pre) => pre + "?");
+  }).join("");
 }
 
 // A súgó lépései (a keret task.helpSteps-ként mutatja): az utolsó lépés (a végeredmény) nélkül, kitakart válasszal.
@@ -42,9 +46,12 @@ export function maskAnswer(html, A, question = "") {
 // Ahol a lépés szerkezete árulja el a választ (✅/❌ táblázat, kisnégyzetek megszámozása), ott csak a tipp jön.
 const ONLY_HINT = new Set(["T13.melyik", "T12.terulet"]);
 const MULTI = new Set(["numset", "pick", "combos"]);
-export function helpSteps(steps, A, question, key = "") {
+// help: a generátor saját, eleve biztonságos súgólépései (kiemelés és eredmény nélkül) – ezeket nem takarjuk ki.
+const NO_SVG_MASK = /^T8\./; // mintás feladatok: az ábra sorszámai csak véletlenül egyeznek a válasszal
+export function helpSteps(steps, A, question, key = "", help = null) {
   if (ONLY_HINT.has(key)) return [];
-  const all = steps || [];
+  const own = Array.isArray(help), all = (own ? help : steps) || [];
   const keep = MULTI.has(A && A.kind) ? Math.max(1, all.length - 2) : all.length - 1;
-  return all.slice(0, Math.max(0, keep)).map(s => maskAnswer(s, A, question));
+  const svg = !NO_SVG_MASK.test(key);
+  return all.slice(0, Math.max(0, keep)).filter(s => s).map(s => own ? s : maskAnswer(s, A, question, { svg }));
 }

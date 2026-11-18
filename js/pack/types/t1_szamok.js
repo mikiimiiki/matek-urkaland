@@ -24,8 +24,11 @@ function kerekites(rng, lvl) {
   const up = ans === hi;
   const ticks = range(0, 10).map(i => ({ v: lo + i * p / 10, big: i === 0 || i === 10 || i === 5, label: (i === 0 || i === 10) ? fmt(lo + i * p / 10) : (i === 5 ? fmt(lo + p / 2) : "") }));
   const nl = numberLine(lo, hi, [{ v: n, label: fmt(n) }, { v: ans, color: "var(--ok)" }], { ticks, hops: [{ from: n, to: ans, label: up ? "fel" : "le", color: "var(--ok)" }] });
+  const nlHelp = numberLine(lo, hi, [{ v: n, label: fmt(n) }], { ticks }); // a súgóba: irány és eredmény nélkül
   return {
     sub: "kerekites",
+    // ❓ súgó: ugyanazok a lépések, de a számegyenesen nincs „fel/le” nyíl és eredmény (a döntés a gyereké)
+    get help() { return this.steps.map(s => s.replace(nl, nlHelp)); },
     q: `Mennyi ${article(n)} <b>${fmt(n)}</b> <b>${PLACE_RE[p]}</b> kerekített értéke?`,
     ans: { kind: "num", value: ans },
     hint: `Melyik két kerek ${PLACE[p]} között van ${article(n)} ${fmt(n)}? Nézd meg ${article(DECIDER[p])} <b>${DECIDER[p]}</b> helyén álló számjegyet!`,
@@ -60,6 +63,8 @@ function szomszed(rng, lvl) {
   const nl = numberLine(lo, hi, [{ v: n, label: fmt(n) }, { v: ans, color: "var(--ok)" }], { ticks });
   return {
     sub: "szomszed",
+    // ❓ súgó: csak a meghatározás (a második lépés a számegyenessel már maga a megoldás)
+    get help() { return [this.steps[0], this.steps[this.steps.length - 1]]; },
     q: `Melyik ${article(n)} <b>${fmt(n)}</b> <b>${word} ${PLACE[p]}</b> számszomszédja?`,
     ans: { kind: "num", value: ans },
     hint: `A ${PLACE[p]} számszomszéd mindig kerek ${PLACE[p]}. Keresd meg a számegyenesen ${article(n)} ${fmt(n)} ${smaller ? "előtti" : "utáni"} kerek ${ACC[p]}!`,
