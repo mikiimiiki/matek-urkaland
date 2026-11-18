@@ -61,12 +61,12 @@ function fakeFirebase(server, email) {
 }
 
 // ---- az app részei, amiket a felhőmodul használ ----
-const { createCloud, safeKey } = await import("../js/cloud.js");
+const { createCloud, safeKey } = await import("../js/core/cloud.js");
 const { createDevice } = await import("../js/core/device.js");
 const E = await import("../js/engine.js");
 const { migrateUser, migrateFamily } = await import("../js/game/migrate.js");
-const { TYPES, makeTask } = await import("../js/types/index.js");
-const { makeRng } = await import("../js/util.js");
+const { TYPES, makeTask } = await import("../js/pack/types/index.js");
+const { makeRng } = await import("../js/pack/util.js");
 
 let fails = 0;
 const ok = (c, msg) => { console.log((c ? "✓ " : "✗ ") + msg); if (!c) fails++; };

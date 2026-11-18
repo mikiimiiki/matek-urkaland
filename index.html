@@ -22,6 +22,7 @@
     <div class="tb-stats">
       <span class="pill" title="Üzemanyag (pontok)">⛽ <b id="tb-pts">0</b></span>
       <span class="pill" title="Napos sorozat">🔥 <b id="tb-streak">0</b></span>
+      <button id="tb-big" class="pill btn-pill" type="button" title="Napi nagy cél">🏆 <b id="tb-big-n">0</b>/<span id="tb-big-goal">30</span><small id="tb-mult" class="mult"></small></button>
     </div>
     <div class="tb-right">
       <button id="tb-cloud" class="pill btn-pill" type="button" title="Felhős mentés"><span id="tb-cloud-ic">☁️</span> <span id="tb-sync">Helyi mód</span></button>
@@ -34,7 +35,7 @@
   <main id="scr-home" class="screen on">
     <section class="hero">
       <div class="mascot" id="mascot" aria-hidden="true">🚀</div>
-      <h1>Matek Űrkaland</h1>
+      <h1 id="app-title">Matek Űrkaland</h1>
       <p class="hello" id="home-hello">Szia!</p>
     </section>
 
@@ -48,6 +49,10 @@
       </div>
       <div class="bar"><i id="mission-bar"></i></div>
       <p class="soft small" id="mission-note"></p>
+      <div class="biggoal" id="biggoal">
+        <div class="bg-top"><b>🏆 Napi nagy cél</b><span class="soft small" id="biggoal-txt"></span></div>
+        <div class="bar gold"><i id="biggoal-bar"></i></div>
+      </div>
     </section>
 
     <section class="advent card" id="advent" hidden></section>
@@ -61,7 +66,8 @@
       <div class="card rewardbox" id="reward-box" hidden></div>
     </section>
 
-    <h2 class="section-title">Bolygók <span class="soft small" id="map-hint">– kattints egy bolygóra a szabad gyakorláshoz</span></h2>
+    <h2 class="section-title"><span id="map-title">Bolygók</span> <span class="soft small" id="map-hint"></span></h2>
+    <p class="lock-note" id="lock-note" hidden></p>
     <section class="map" id="map"></section>
     <p class="keys-hint">⌨️ <b>Tab</b> / <b>Shift+Tab</b>: lépés a bolygók között · <b>Enter</b>: indulás · <b>F1</b>: mi vár itt? · <b>Esc</b>: vissza</p>
 
@@ -103,6 +109,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -260,10 +260,12 @@ Mindkét app a saját projektjében, ugyanazzal a szerkezettel: `families/{fam}/
 - Átállás: schema 4.
 
 **Átvétel:**
-- [ ] Minden meglévő teszt zöld; a generátorteszt változatlan.
-- [ ] Új tesztek: pontozás (minden sor a táblából), napi cél (szorzó, előleg, napváltás, ajándék naponta egyszer), témazár.
-- [ ] Böngészőben a Matek ugyanúgy működik, mint előtte (billentyűk, ⚙️ ablak, szinkron, rangok, advent).
-- [ ] A `js/shell/` és `js/core/` egyetlen sora sem hivatkozik matekos fogalomra (ellenőrző szkript: „bolygó”, „⛽”, „T1” keresése).
+- [x] Minden meglévő teszt zöld; a generátorteszt változatlan.
+- [x] Új tesztek: pontozás (minden sor a táblából), napi cél (szorzó, előleg, napváltás, ajándék naponta egyszer), témazár.
+- [x] Böngészőben a Matek ugyanúgy működik, mint előtte (billentyűk, ⚙️ ablak, szinkron, rangok, advent).
+- [x] A `js/shell/` és `js/core/` egyetlen sora sem hivatkozik matekos fogalomra (ellenőrző szkript: „bolygó”, „⛽”, „T1” keresése).
+
+> Megvalósítva (2026-11-18). A `js/types` a `js/pack/types` alá került; az `index.html` sablon közös szerkezetű, a szövegeket a váz tölti ki.
 
 ### 2. ütem – Massalhangzok a vázon (+5–6 nap)
 

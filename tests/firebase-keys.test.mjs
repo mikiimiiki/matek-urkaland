@@ -1,8 +1,8 @@
 // A felhőbe küldött játékosadat kulcsai nem tartalmazhatnak . $ # [ ] / karaktert (Firebase-szabály),
 // és a régi, ponttal írt kulcsokat a normUser átalakítja.
 import * as E from "../js/engine.js";
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng } from "../js/util.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng } from "../js/pack/util.js";
 const rng = makeRng(42), u = E.newUser("Teszt");
 for (let i = 0; i < 60; i++) { const T = TYPES[i % TYPES.length]; const t = makeTask(T, E.pickSub(u, T, 1, rng), 1, rng); E.record(u, t, i % 3 === 0 ? 0 : 1, 20000, { q: "kérdés", a: "1", c: "2" }); }
 E.completeMission(u);

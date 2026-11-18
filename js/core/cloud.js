@@ -13,9 +13,8 @@
 //
 // Felhőszerkezet: families/{fam}/ users/{gyerek} · logs/{gyerek}/{időbélyeg} · settings · parent · deleted ·
 //                 devices/{eszköz} · members   (a szabályok a families/{fam} alatt mindent a tagoknak engednek)
-import { FIREBASE_CONFIG } from "./firebase-config.js";
-import { diff, merge, apply, stable, bytes, clone } from "./core/syncdiff.js";
-import { guessName, monthKey } from "./core/device.js";
+import { diff, merge, apply, stable, bytes, clone } from "./syncdiff.js";
+import { guessName, monthKey } from "./device.js";
 
 const FB_BASE = "https://www.gstatic.com/firebasejs/13.2.0/";
 const PUSH_DELAY = 1500;      // feladat után ennyi várakozással küldünk (ha gyorsan jön a következő válasz, egyben megy)
@@ -62,7 +61,8 @@ function errText(e) {
 }
 
 export function createCloud(api) {
-  // api: { state(), persist(), refresh(), onStatus(status), normUser(u), device, storeKey, onDevice(rec) }
+  // api: { config (Firebase-beállítás), state(), persist(), refresh(), onStatus(status), normUser(u), device, storeKey, onDevice(rec) }
+  const FIREBASE_CONFIG = api.config || {};
   const dev = api.device;
   let fb = null, db = null, fa = null, auth = null, user = null, member = false, note = "", authKnown = false;
   let unsubs = [], pushT = null, offT = null;

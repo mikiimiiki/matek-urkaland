@@ -2,10 +2,10 @@
 // Futtatás: node tests/sync.test.mjs
 import { diff, merge, apply, stable, flatten, bytes } from "../js/core/syncdiff.js";
 import { guessName } from "../js/core/device.js";
-import { forSync, mergeLogs, clean } from "../js/cloud.js";
+import { forSync, mergeLogs, clean } from "../js/core/cloud.js";
 import * as E from "../js/engine.js";
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng } from "../js/util.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng } from "../js/pack/util.js";
 import { migrateUser, migrateFamily } from "../js/game/migrate.js";
 
 let fails = 0;

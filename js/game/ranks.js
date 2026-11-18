@@ -1,7 +1,7 @@
 // ===== Ranglétra: 12 rang, rangonként kinyíló tárgyak =====
 // A rang a ⛽ (u.pts) alapján számolódik, így a meglévő játékos azonnal a pontjainak megfelelő rangra kerül.
 import { dayNum, dateKey } from "../core/dates.js";
-import { POINTS } from "../engine.js";
+import { SCORING } from "../core/scoring.js";
 
 export const RANKS = [
   { name: "Űrkadét", pts: 0, unlocks: ["av:🧑‍🚀", "av:👩‍🚀", "av:👨‍🚀", "av:👽", "bg:night", "rocket:purple", "confetti:color", "frame:none"] },
@@ -30,7 +30,7 @@ export const rankItems = pts => RANKS.slice(0, rankIndex(pts) + 1).flatMap(r => 
 export function unlockRank(id) { const i = RANKS.findIndex(r => r.unlocks.includes(id)); return i < 0 ? null : RANKS[i]; }
 
 // Egy nap ⛽-je: ha el van tárolva (days[].pts), azt; régebbi napoknál becslés a jó/rossz válaszokból
-const dayPts = d => (d ? (d.pts != null ? d.pts : (d.ok || 0) * POINTS.first + ((d.n || 0) - (d.ok || 0)) * 3) : 0);
+const dayPts = d => (d ? (d.pts != null ? d.pts : (d.ok || 0) * SCORING.first + ((d.n || 0) - (d.ok || 0)) * 3) : 0);
 export const DEFAULT_PER_DAY = 120;
 // „kb. Y nap”: az utolsó 7 nap átlagos napi ⛽-je alapján (adat nélkül 120 ⛽/nap)
 export function daysTo(u, need, today = dayNum()) {

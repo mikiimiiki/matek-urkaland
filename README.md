@@ -24,7 +24,9 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
 - **Hibakezelés:** első hibánál tipp, a második hibánál lépésenkénti, képes magyarázat. Ilyenkor a gyerek a saját válaszát is látja, a felismert hibával együtt („úgy számoltál, mintha egy órában 100 perc lenne”). Utána ikerfeladat jön, a hibás típus pedig 1, 3 és 7 nap múlva visszatér.
 - **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás és pontlevonás nincs.
 - **Szabad gyakorlás:** a térképen egy bolygóra kattintva rögzített hosszú kör indul abból a típusból (3, 5 vagy 10 feladat – gyerekenként állítható a ⚙️ Beállítások fülön); az üres karikák már az elején mutatják, hány feladat lesz, a kör végén összegzés.
-- **Napi küldetés:** alapból 10 feladat vagy 15 perc (gyerekenként állítható). Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés.
+- **Napi küldetés:** alapból 10 feladat vagy 15 perc (gyerekenként állítható). Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés. Ez viszi a napos sorozatot (hetente 1 pajzs).
+- **Napi nagy cél:** alapból 30 helyes válasz → 🏆 serlegeső és a kör végén ajándékdoboz (holnapi előleg, puszi, ölelés…). A szülő aznapra ×2/×3 pontszorzót adhat, és lezárhat bolygókat (témazár).
+- **Egységes pontozás:** elsőre jó 10 (2. szinten +2, 3. szinten +5), tipp után 5, magyarázat után 2, sorozatbónusz +3 a 3. egymás utáni elsőre jótól, hibából tanulás +3.
 - **⚙️ Szülői beállítások (PIN-nel), felugró ablakban, 6 fülön:**
   - 📊 **Fejlődés:** Ma / 7 nap / 30 nap csempék, diagram napi, heti vagy havi bontásban (oszlop: feladatszám, vonal: elsőre jó arány), bolygónkénti sávok ▲/▼ változással az előző időszakhoz képest;
   - 🗺️ **Bolygók:** csillagok, szintek, altípusok állapota színekkel;
@@ -61,6 +63,7 @@ node tests/core.test.mjs
 node tests/sync.test.mjs
 node tests/ranks.test.mjs
 node tests/events.test.mjs
+node tests/shell.test.mjs
 node tests/cloud.test.mjs
 node tests/firebase-keys.test.mjs
 ```
@@ -89,8 +92,15 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 - Próbafelvételi mód: 45 perc, az eredeti feladatsorokkal, a javítási útmutató szerinti pontozással
 
-## Felépítés (újrahasznosítható keret)
+## Felépítés: közös váz + feladatcsomag
 
-- `js/core/`: játékfüggetlen keret: gyorsbillentyűk (`keys.js`), egymásra rakható ablakok (`modal.js`), füles ablak (`tabs.js`), leíró alapú beállítások (`settings.js`), fejlődés-adatok (`progress.js`), diagram (`charts.js`), részleges szinkron és összefésülés (`syncdiff.js`), eszközazonosító és forgalomszámláló (`device.js`), kinyitható tárgyak segédei (`cosmetics.js`), időszakos események (`events.js`), hóesés (`snow.js`).
-- `js/game/`: a Matek Űrkaland saját beállításai (`config.js`: témák, beállítások leírása), az adat-átállás (`migrate.js`), a ranglétra (`ranks.js`), a tárgykatalógus (`cosmetics-catalog.js`) és az ünnepek (`events.js`).
-- `js/parent/tabs.js`: a ⚙️ ablak fülei; az `app.js` egy `app` objektumon keresztül adja az adatokat.
+A program váza közös és paraméterezhető; appankként csak a feladatok és a téma térnek el (részletek: `docs/terv-kozos-vaz.md`).
+
+- `js/main.js`: indítás – `startShell({ game: GAME, pack: PACK })`.
+- `js/core/`: játékfüggetlen keret – billentyűk, ablakok, fülek, beállításűrlap, fejlődés-adatok, diagram, részleges szinkron, felhő (`cloud.js`), eszköz és forgalom, tárgyak, események, hóesés, **egységes pontozás** (`scoring.js`), **kétszintű napi cél** (`dailygoal.js`), válaszrögzítés (`answers.js`), jelvénymotor (`badges.js`), ismétlés (`srs.js`), véletlenszám (`rng.js`).
+- `js/shell/`: a közös váz képernyői – kezdőlap, gyakorlókör, ⚙️ ablak fülei, 🎒 Gyűjtemény, ünnepek, játékosok és eszközök, PIN, felhő-UI, súgó, napi nagy cél (serlegeső, ajándékdobozok, szorzós nap).
+- `js/game/`: a Matek Űrkaland paraméterei – téma és szavak (`config.js`), ranglétra, tárgyak, ünnepek, ajándékok, adatátállás, Firebase.
+- `js/pack/`: a matekos feladatcsomag – a 15 feladattípus, válaszadó felületek, bolygók csillagai és szintjei, küldetésterv, bolygósúgó.
+- `js/engine.js`: a csomag és a keret összekötője a tesztekhez.
+
+A `tests/shell.test.mjs` azt is ellenőrzi, hogy a `js/core` és a `js/shell` nem hivatkozik matekos fogalomra.

@@ -151,17 +151,17 @@ h1 { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #c4b5
 
 /* Bolygótérkép */
 .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-.planet { position: relative; border: 0; border-radius: 22px; padding: 16px 12px 14px; background: rgba(255,255,255,.08); color: #fff; text-align: center; box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); transition: transform .15s, background .15s; }
-.planet:hover { transform: translateY(-4px); background: rgba(255,255,255,.14); }
-.planet .orb { width: 86px; height: 86px; margin: 0 auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: 42px; box-shadow: inset -10px -12px 0 rgba(0,0,0,.18), 0 0 26px var(--glow, #7c3aed); }
-.planet .pname { font-weight: 900; font-size: 18px; }
-.planet .ptype { font-size: 14px; color: #c7d2fe; }
-.planet .pstars { font-size: 22px; letter-spacing: 2px; margin-top: 4px; }
-.planet .pstars .off { opacity: .25; }
-.planet .plvl { font-size: 13px; color: #c7d2fe; }
-.planet.locked { opacity: .45; cursor: default; }
+.tcard { position: relative; border: 0; border-radius: 22px; padding: 16px 12px 14px; background: rgba(255,255,255,.08); color: #fff; text-align: center; box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); transition: transform .15s, background .15s; }
+.tcard:hover { transform: translateY(-4px); background: rgba(255,255,255,.14); }
+.tcard .orb { width: 86px; height: 86px; margin: 0 auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: 42px; box-shadow: inset -10px -12px 0 rgba(0,0,0,.18), 0 0 26px var(--glow, #7c3aed); }
+.tcard .pname { font-weight: 900; font-size: 18px; }
+.tcard .ptype { font-size: 14px; color: #c7d2fe; }
+.tcard .pstars { font-size: 22px; letter-spacing: 2px; margin-top: 4px; }
+.tcard .pstars .off { opacity: .25; }
+.tcard .plvl { font-size: 13px; color: #c7d2fe; }
+.tcard.locked { opacity: .45; cursor: default; }
 /* billentyűzettel kijelölt bolygó / küldetés gomb */
-.planet:focus-visible { outline: 4px solid #facc15; outline-offset: 3px; transform: translateY(-4px) scale(1.04); background: rgba(255,255,255,.18); }
+.tcard:focus-visible { outline: 4px solid #facc15; outline-offset: 3px; transform: translateY(-4px) scale(1.04); background: rgba(255,255,255,.18); }
 #btn-mission:focus-visible { outline: 4px solid #facc15; outline-offset: 4px; }
 .keys-hint { color: #c7d2fe; text-align: center; font-size: 14px; margin: 12px 0 0; }
 .keys-hint b { color: #fde68a; }
@@ -170,7 +170,7 @@ h1 { font-size: 40px; font-weight: 900; background: linear-gradient(90deg, #c4b5
 .help-list button { display: flex; width: 100%; gap: 10px; align-items: center; border: 0; background: #f8fafc; border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; text-align: left; font-weight: 800; }
 .help-list button:focus-visible, .help-list button:hover { background: var(--pri-soft); }
 .help-list .soft { font-weight: 600; }
-.planet.locked:hover { transform: none; }
+.tcard.locked:hover { transform: none; }
 .badges { display: flex; flex-wrap: wrap; gap: 10px; }
 .badge { background: rgba(255,255,255,.1); color: #fff; border-radius: 14px; padding: 8px 12px; font-weight: 700; font-size: 15px; }
 .badge.off { opacity: .35; filter: grayscale(1); }
@@ -395,3 +395,52 @@ b.big { font-size: 1.35em; color: var(--pri); }
   .ans-in { width: 150px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- Közös váz: napi nagy cél, ajándékok, szorzó, témazár, Gyűjtemény ---------- */
+#tb-big .mult { margin-left: 3px; font-weight: 900; color: #facc15; }
+#tb-big.done { box-shadow: 0 0 0 2px #facc15; }
+#tb-big.fire2 { box-shadow: 0 0 0 2px #f97316, 0 0 12px rgba(249,115,22,.7); }
+#tb-big.fire3 { box-shadow: 0 0 0 2px #ec4899, 0 0 18px rgba(236,72,153,.9); animation: fire 1.2s ease-in-out infinite; }
+@keyframes fire { 50% { box-shadow: 0 0 0 3px #f59e0b, 0 0 24px rgba(245,158,11,.95); } }
+.biggoal { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.bg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bar.gold > i { background: linear-gradient(90deg, #fde68a, #f59e0b); }
+.biggoal.done .bar.gold > i { background: linear-gradient(90deg, #facc15, #16a34a); }
+.trophy-banner { position: fixed; left: 50%; top: 36%; transform: translate(-50%, -50%); z-index: 220; pointer-events: none; text-align: center; background: rgba(30,27,75,.92); color: #fff; padding: 18px 26px; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.4); animation: pop .3s ease-out; }
+.trophy-banner .tb-cup { font-size: 64px; line-height: 1; }
+.trophy-rain { position: fixed; inset: 0; pointer-events: none; z-index: 215; overflow: hidden; }
+.trophy-rain span { position: absolute; top: -60px; animation: tfall 2.8s linear forwards; }
+@keyframes tfall { to { transform: translateY(115vh) rotate(360deg); } }
+.gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 14px 0; }
+.gift { position: relative; height: 96px; border: 0; background: none; cursor: pointer; animation: giftin .4s ease-out backwards; animation-delay: calc(var(--i) * 80ms); }
+.gift-body { position: absolute; left: 12%; right: 12%; bottom: 0; height: 62%; background: var(--c); border-radius: 10px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.15); }
+.gift-body::after { content: ""; position: absolute; left: 44%; width: 12%; top: 0; bottom: 0; background: rgba(255,255,255,.75); }
+.gift-lid { position: absolute; left: 6%; right: 6%; bottom: 58%; height: 20%; background: var(--c); border-radius: 8px; filter: brightness(1.12); transition: transform .45s; }
+.gift-in { position: absolute; left: 0; right: 0; bottom: 18%; font-size: 34px; opacity: 0; transition: opacity .3s .2s, transform .45s; }
+.gift:hover .gift-lid { transform: translateY(-4px) rotate(-3deg); }
+.gift.open .gift-lid { transform: translateY(-36px) rotate(-18deg); }
+.gift.open .gift-in { opacity: 1; transform: translateY(-34px); }
+.gift.other { opacity: .55; }
+.gift.mine .gift-body { box-shadow: 0 0 0 4px #facc15, inset 0 -6px 0 rgba(0,0,0,.15); }
+@keyframes giftin { from { transform: scale(.6); opacity: 0; } }
+.gift-res { text-align: center; min-height: 20px; }
+.gift-big { font-size: 56px; }
+.turbo-greet { position: fixed; left: 50%; top: 90px; transform: translateX(-50%); z-index: 230; background: linear-gradient(135deg, #7c3aed, #ec4899); color: #fff; padding: 14px 22px; border-radius: 18px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); animation: pop .3s ease-out; cursor: pointer; }
+.turbo-greet.x3 { background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6); }
+.turbo-greet .tg-ic { font-size: 40px; }
+.turbo-greet.out { opacity: 0; transition: opacity .4s; }
+.tcard.blocked { filter: grayscale(.8); opacity: .6; }
+.lock-note { color: var(--sky); text-align: center; font-weight: 700; margin: 0 0 8px; }
+.lockgrid { display: flex; flex-wrap: wrap; gap: 6px; }
+.lockitem { display: flex; gap: 6px; align-items: center; border: 2px solid var(--line); border-radius: 10px; padding: 4px 10px; font-size: 14px; cursor: pointer; }
+.lockitem.on { border-color: var(--bad); background: var(--badbg); }
+.lockrow { grid-template-columns: 1fr; }
+.starlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.staritem { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; }
+.staritem .si-ic { font-size: 28px; } .staritem .si-n { flex: 1; font-weight: 800; } .staritem .si-s .off { filter: grayscale(1); opacity: .35; }
+.weekbars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 120px; }
+.weekbars div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--soft); height: 100%; justify-content: flex-end; }
+.weekbars i { width: 100%; max-width: 30px; border-radius: 6px 6px 2px 2px; background: var(--pri2); min-height: 3px; }
+.weekbars i.done { background: var(--ok); }
+.wfr.fr-silver { box-shadow: 0 0 0 3px #e2e8f0, 0 0 8px #e2e8f0; } .wfr.fr-gold { box-shadow: 0 0 0 3px #facc15, 0 0 10px #facc15; } .wfr.fr-2027 { box-shadow: 0 0 0 3px #f472b6, 0 0 0 5px #facc15; }
+body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic Sans MS", "Verdana", sans-serif; letter-spacing: .04em; }

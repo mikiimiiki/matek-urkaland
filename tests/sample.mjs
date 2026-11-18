@@ -1,6 +1,6 @@
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng, plain } from "../js/util.js";
-import { correctText } from "../js/check.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng, plain } from "../js/pack/util.js";
+import { correctText } from "../js/pack/check.js";
 const only = process.argv[2];
 for (const T of TYPES) { if (only && T.id !== only) continue; for (const S of T.subs) for (let lvl = 1; lvl <= 3; lvl++) {
   if ((S.minLvl || 1) > lvl || (S.maxLvl || 3) < lvl) continue;

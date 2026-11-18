@@ -5,8 +5,8 @@ import { unlockedSet, equipped } from "../js/core/cosmetics.js";
 import { dayNum, dateKey } from "../js/core/dates.js";
 import * as E from "../js/engine.js";
 import { migrateUser, migrateFamily } from "../js/game/migrate.js";
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng } from "../js/util.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng } from "../js/pack/util.js";
 
 let fails = 0;
 const ok = (c, msg) => { console.log((c ? "✓ " : "✗ ") + msg); if (!c) fails++; };

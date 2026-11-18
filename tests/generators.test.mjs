@@ -2,9 +2,9 @@
 // Futtatás:  node tests/generators.test.mjs
 // Ellenőrzi: van-e válasz, egész-e, nem negatív-e, a 4. osztályos számkörben marad-e, van-e magyarázat,
 // nincs-e "undefined"/"NaN" a szövegben, és a hibaelemző (why) nem dob-e hibát.
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng, plain } from "../js/util.js";
-import { checkAnswer } from "../js/check.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng, plain } from "../js/pack/util.js";
+import { checkAnswer } from "../js/pack/check.js";
 
 const N = Number(process.argv[2] || 1000);
 let fails = 0, total = 0;

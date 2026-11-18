@@ -6,8 +6,8 @@ import { clampValue, defaultsFor, resolve } from "../js/core/settings.js";
 import { dayNum, dateKey, keyToDay } from "../js/core/dates.js";
 import { SETTINGS, TOPICS } from "../js/game/config.js";
 import { migrateFamily, migrateUser, SCHEMA } from "../js/game/migrate.js";
-import { TYPES, makeTask } from "../js/types/index.js";
-import { makeRng } from "../js/util.js";
+import { TYPES, makeTask } from "../js/pack/types/index.js";
+import { makeRng } from "../js/pack/util.js";
 
 let fails = 0;
 const ok = (c, msg) => { console.log((c ? "✓ " : "✗ ") + msg); if (!c) fails++; };
@@ -58,7 +58,7 @@ ok(keyToDay(dateKey(t)) === t, "dateKey ↔ keyToDay oda-vissza egyezik");
   ok(clampValue(g, 99) === 40 && clampValue(g, "x") === 10, "number: határok és hibás érték");
   ok(clampValue(f, "10") === 10 && clampValue(f, 7) === 5, "select: csak a megengedett érték");
   ok(resolve(g, {}, { goalTasks: 12 }) === 12 && resolve(g, { goalTasks: 20 }, { goalTasks: 12 }) === 20 && resolve(g, null, null) === 10, "resolve: gyerek → család → alap");
-  ok(Object.keys(defaultsFor(SETTINGS, "child")).length === 6, "6 gyerekenkénti beállítás");
+  ok(Object.keys(defaultsFor(SETTINGS, "child")).length === 9 && SETTINGS.every(d => d.scope !== "child" || d.group), "9 gyerekenkénti beállítás, mind csoportban");
   ok(TOPICS().length === TYPES.length, "minden bolygó téma a Fejlődés fülön");
 }
 // --- adat-átállás
