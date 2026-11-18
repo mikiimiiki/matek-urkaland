@@ -73,7 +73,9 @@ function check() {
   S.tries++;
   if (S.tries === 1) S.firstWrong = v;
   S.ui.markWrong();
-  if (S.tries === 1) {
+  // ha a beírás be van kapcsolva, már az első hibánál jön a magyarázat és a beírás (nincs tipp-újrapróba:
+  // a helyes alak megmutatása után az újrapróbának nem lenne értelme)
+  if (S.tries === 1 && retypeMode(t) === "off") {
     $("side-body").innerHTML = `<div class="fb hint"><div class="fb-title">Nem egészen… 🤔</div>Próbáld újra! Itt egy tipp:</div><div class="step" style="padding-left:14px">💡 ${t.hint}</div>${r.feedback || ""}`;
     if (C.tts) speak("Nem egészen. " + t.hint);
     return;
@@ -138,7 +140,7 @@ function explain(v) {
         box.append(el("div", "fb hint", "Ez most nehéz volt – semmi baj! Választhatsz: továbbmehetsz, vagy gyakorolhatsz még egy hasonlóval. Ez a feladattípus pár nap múlva úgyis visszajön."));
       }
       const showActs = () => { setActions(acts.map(a => btn((a.primary ? "primary" : "secondary") + " big", a.label, a.fn))); S.onNext = acts[0].fn; };
-      const mode = t.retype ? (prefs(cur()).retype || "must") : "off";
+      const mode = retypeMode(t);
       // a beíró ablak MOST, ebben a koppintás-kezelőben nyílik (iPaden csak így ugrik fel a billentyűzet)
       if (mode === "off") showActs(); else openRetype(t, acts, mode, showActs);
     }
@@ -240,6 +242,8 @@ export const playKeys = {
 // ---------- ✍️ A helyes alak beírása (hibás válasz és magyarázat után) ----------
 // mode: "must" (kötelező) | "skip" (kihagyható). Középen nyílik; a továbblépő gomb(ok) csak a helyes beírás után aktívak.
 // Egyezés: betűre pontosan (ékezet, hosszú mássalhangzó), de a kis/nagybetű, a szélső szóköz és az Unicode-alak mindegy.
+// a beírás módja ennél a feladatnál: "must" | "skip" | "off" (csak ha a feladat megadja a helyes alakot)
+function retypeMode(t) { return t && t.retype ? (prefs(cur()).retype || "must") : "off"; }
 function openRetype(t, acts, mode, showActs) {
   let done = false;
   modal((box, close) => {
