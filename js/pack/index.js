@@ -4,6 +4,7 @@
 import { TYPES, COMING, typeById, makeTask as makeRaw } from "./types/index.js";
 import { checkAnswer, answerText, correctText } from "./check.js";
 import { plain } from "./util.js";
+import { helpSteps } from "./helpmask.js";
 import { PLANET_INFO } from "./planet-info.js";
 import { renderAnswer } from "./answer-ui.js";
 import { typeState, typeLvl, subKey, subAcc, subColor, pickSub, planMission, recordProgress, starsTotal, PACK_BADGES } from "./progress.js";
@@ -56,6 +57,7 @@ export const PACK = {
         return { ok: r.ok, feedback };
       },
       hint: t.hint, steps: t.steps,
+      helpSteps: helpSteps(t.steps, A, t.q + " " + (t.viz || ""), T.id + "." + sub), // a ❓ súgó: a végeredmény nélkül, kitakarva
       why: v => { try { return t.why ? t.why(v) : null; } catch { return null; } },
       answerText: v => answerText(A, v), correctText: correctText(A),
       speech: t.q, plainQ: speechText(t.q).slice(0, 220),

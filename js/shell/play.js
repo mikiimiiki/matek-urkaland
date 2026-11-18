@@ -58,7 +58,7 @@ function renderTask() {
   $("answer").innerHTML = "";   // az előző feladat felülete ne maradjon ott
   S.ui = t.render($("answer"), { submit: () => onEnter(), answering: () => !!S && S.phase === "answer", toast, useHelp: () => { S.helps = (S.helps || 0) + 1; } });
   setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", check)]);
-  if (stepHelpOn()) S.helpCap = shCap((t.steps || []).length, shState(cur(), t.topic));
+  if (stepHelpOn()) S.helpCap = shCap(helpList(t).length + 1, shState(cur(), t.topic));
   helpBadge();
   if (C.tts) speak(t.speech || t.q);
 }
@@ -289,6 +289,9 @@ function openRetype(t, acts, mode, showActs) {
 // ---------- 💡 Lépésenkénti súgó (ha a csomag kéri: PACK.stepHelp) ----------
 // Feladat közben a ❓ / F1 a megoldás levezetésének következő lépését mutatja – a végeredményt (utolsó lépés) soha.
 // Minden lépés egy segítség (pontlevonás). A csökkenés / visszatérés szabályai: js/core/stephelp.js.
+// A súgóban mutatható lépések: a csomag megadhatja (task.helpSteps, pl. kitakart végeredménnyel, vagy a megoldást
+// felsoroló lépések nélkül); különben a levezetés az utolsó lépés (a végeredmény) nélkül. Üres lista: a tippet mutatjuk.
+const helpList = t => Array.isArray(t.helpSteps) ? t.helpSteps : (t.steps || []).slice(0, -1);
 const stepHelpOn = () => !!(C.pack && C.pack.stepHelp && S && S.task && prefs(cur()).stepHelp !== false);
 function helpBadge() {
   const b = $("tb-help"); if (!b) return;
@@ -304,7 +307,7 @@ export function stepHelpPress() {
   return true;
 }
 function renderStepHelp() {
-  const t = S.task, steps = t.steps || [], single = steps.length <= 1, sb = $("side-body");
+  const t = S.task, steps = helpList(t), single = !steps.length, sb = $("side-body");
   const cost = ((G().scoring || SCORING).help ?? SCORING.help);
   sb.innerHTML = "";
   sb.append(el("div", "fb hint", `<div class="fb-title">💡 Súgó · ${S.helpShown}/${S.helpCap} ${single ? "tipp" : "lépés"}</div>Minden lépés −${cost} pont. A végeredményt neked kell kiszámolnod!`));
