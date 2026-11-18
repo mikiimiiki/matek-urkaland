@@ -198,7 +198,7 @@ export function parentTabs(app) {
     loadDevices(ctx);
     const list = devs ? devs.list : [{ id: app.device.id, name: app.device.name, model: "", lastSeen: Date.now(), kids: app.device.kids, syncMode: app.device.syncMode, me: true }];
     const wrap = el("div", "devwrap"), tb = el("table", "devtable");
-    tb.innerHTML = `<thead><tr><th>Eszköz</th><th>Utoljára</th>${users.map(u => `<th class="c" title="${escHtml(u.name)}">${u.avatar}<br><span class="small">${escHtml(u.name)}</span></th>`).join("")}<th>Szinkron</th><th></th></tr></thead>`;
+    tb.innerHTML = `<thead><tr><th>Eszköz</th><th>Utoljára</th>${users.map(u => `<th class="c" title="${escHtml(u.name)}">${u.avatar}<br><span class="small">${escHtml(u.name)}</span></th>`).join("")}<th></th></tr></thead>`;
     const body = el("tbody");
     list.forEach(d => {
       const tr = el("tr", d.me ? "me" : "");
@@ -219,7 +219,7 @@ export function parentTabs(app) {
         });
         td.append(cb); tr.append(td);
       });
-      tr.append(el("td", "small", MODE_LABEL[d.syncMode] || "–"));
+      // a szinkronmód csak a ☁️ Felhő fülön látszik és állítható (ezen az eszközön)
       const tdd = el("td");
       if (!d.me) tdd.append(btn("ghost danger", "🗑️", async () => { if (await app.removeDevice(d.id, d.name)) { devAt = 0; devs.list = devs.list.filter(x => x.id !== d.id); ctx.redraw(); } }));
       tr.append(tdd); body.append(tr);
