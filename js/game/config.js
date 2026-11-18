@@ -27,6 +27,7 @@ export const GAME = {
     helloTodo: "Indulhat a mai küldetés?", helloDone: "A mai küldetés kész – szabadon repülhetsz tovább! 🌟",
     start: "🚀 Indítás", cont: "🚀 Folytatás", again: "🚀 Még egy kör", mission: "🚀 Napi küldetés", plus: "🚀 Plusz kör",
     explainTitle: "Nézzük meg együtt! 🧑‍🚀", sideIcon: "🧑‍🚀", helpTitle: "❓ Mi vár a bolygókon?",
+    homeTip: "✏️ Tipp: tarts magad mellett füzetet! A felvételin sincs számológép – számolj papíron.", playTip: "✏️ Számolj a füzetedben!",
   },
   legendLine: "Te vagy a Csillagflotta legendája! 🌟",
   defaults: { goalTasks: 10, goalMin: 15, bigGoal: 30, freeTasks: 5 },

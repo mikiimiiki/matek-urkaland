@@ -37,7 +37,7 @@ function nextTask() {
   const task = C.pack.makeTask(item, C.rng, cur());
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
   clearTimeout(S.autoT);
-  Object.assign(S, { task, twin: !!item.twin, tries: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null });
+  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null });
   renderTask();
 }
 function renderDots() {
@@ -53,7 +53,9 @@ function renderTask() {
   $("task-q").innerHTML = t.q;
   $("task-viz").innerHTML = t.viz || "";
   $("side-body").innerHTML = `<div class="side-empty"><div class="big-emoji">${S.twin ? "🔁" : T.sideIcon}</div><p>${S.twin ? "Most egy hasonló feladat jön – próbáld ki, amit az előbb láttál!" : "Olvasd el figyelmesen a feladatot!<br>Ha elakadsz, a hiba után itt kapsz segítséget."}</p></div>`;
-  S.ui = t.render($("answer"), { submit: () => onEnter(), answering: () => !!S && S.phase === "answer", toast });
+  // io: a feladat ezen keresztül kér ellenőrzést, jelzi a segítséget (pontlevonás), és üzen
+  $("answer").innerHTML = "";   // az előző feladat felülete ne maradjon ott
+  S.ui = t.render($("answer"), { submit: () => onEnter(), answering: () => !!S && S.phase === "answer", toast, useHelp: () => { S.helps = (S.helps || 0) + 1; } });
   setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", check)]);
   if (C.tts) speak(t.speech || t.q);
 }
@@ -220,11 +222,16 @@ export const homeKeys = {
 export const playKeys = {
   id: "play",
   onEnter: a => {
-    if (S && S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0) && !(a && a.tagName === "BUTTON")) { S.onNext(); return true; }
+    if (!S || (a && a.tagName === "BUTTON")) return false;
+    if (S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0)) { S.onNext(); return true; }
+    // válasz közben: ellenőrzés (a beviteli mezők és a saját Enter-kezelők ezt előbb elkapják)
+    if (S.phase === "answer" && !(S.ui && S.ui.auto) && !(a && /^(INPUT|TEXTAREA)$/.test(a.tagName))) { check(); return true; }
     return false;
   },
   onEsc: () => goHome(),
   onF1: () => openHelp(),
+  // minden más billentyű a feladat felületéé (pl. betűgépelés a betűkirakón, 1–4 a választós gomboknál)
+  onKey: e => !!(S && S.ui && S.ui.onKey && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "") && S.ui.onKey(e)),
 };
 // Teszteléshez (#debug): egy adott feladat megnyitása
 export function debugShow(item) { S = S || { mode: "free", topic: item.topic, plan: [], idx: 0, res: [], combo: 0 }; S.topic = item.topic; S.plan.splice(S.idx, 0, item); show("scr-play"); nextTask(); }

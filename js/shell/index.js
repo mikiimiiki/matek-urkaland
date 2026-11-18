@@ -21,6 +21,7 @@ import { openGifts, turboGreet, bigInfo } from "./goal-ui.js";
 export function startShell({ game, pack }) {
   C.game = game; C.pack = pack; C.defs = settingsDefs(game, pack); C.rng = makeRng();
   C.refreshAll = refreshAll; C.refreshCloud = refreshCloud;
+  if (game.bodyClass) document.body.classList.add(game.bodyClass);   // pl. világos téma
 
   // Teszteléshez: index.html?nap=2026-12-06#debug → a „mai nap” 2026. dec. 6.; ilyenkor külön tesztadatokkal, felhő nélkül fut
   const SIM = location.hash === "#debug" ? new URLSearchParams(location.search).get("nap") : null;
@@ -35,7 +36,8 @@ export function startShell({ game, pack }) {
   C.state = st;
   const M = game.migrate, normMig = u => M.user(normUser(u, pack), C.state);
   M.family(C.state);
-  Object.keys(st.users).forEach(n => { st.users[n] = normMig(st.users[n]); });
+  // a név a kulcs is – régebbi adatnál csak ott szerepel, ezért innen pótoljuk
+  Object.keys(st.users).forEach(n => { st.users[n] = normMig({ ...st.users[n], name: st.users[n].name || n }); });
 
   // ---- eszköz és felhő ----
   C.device = createDevice(C.storeKey);
@@ -67,6 +69,9 @@ export function startShell({ game, pack }) {
   $("tb-big").addEventListener("click", bigInfo);
   $("play-exit").addEventListener("click", goHome);
   $("play-tts").addEventListener("click", () => { C.tts = !C.tts; C.updTtsBtn(); const S = round(); if (C.tts && S && S.task) speak(S.task.speech || S.task.q); else if ("speechSynthesis" in window) speechSynthesis.cancel(); });
+  // a sablon játékfüggő szövegei
+  $("tb-pts-ic").textContent = game.pointsIcon; $("tb-pts-pill").title = game.pointsName[0].toUpperCase() + game.pointsName.slice(1);
+  [["home-tip", "homeTip"], ["play-tip", "playTip"]].forEach(([id, k]) => { const e = $(id); if (e) { e.textContent = game.texts[k] || ""; e.hidden = !game.texts[k]; } });
   const kh = document.querySelector(".keys-hint");
   if (kh) kh.innerHTML = `⌨️ <b>Tab</b> / <b>Shift+Tab</b>: lépés a ${game.topicWord.many} között · <b>Enter</b>: indulás · <b>F1</b>: mi vár itt? · <b>Esc</b>: vissza`;
   keys.setScreen(homeKeys);

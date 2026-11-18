@@ -283,7 +283,7 @@ export function createCloud(api) {
       const name = r0.name || k;
       if ((st.deleted || {})[name] >= (r0.upd || 0)) return;
       const legacyLog = r0.log ? arr(r0.log) : null;      // régi változatú eszköz a felhasználóban tárolja a hibanaplót
-      const r = clone(clean({ ...r0, log: undefined }));
+      const r = clone(clean({ ...r0, name, log: undefined }));   // a név a kulcsból is jöhet (régebbi adat)
       const l = st.users[name];
       if (!l) {
         st.users[name] = api.normUser(clone({ ...r, log: legacyLog || [] })); changed++;

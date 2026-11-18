@@ -20,7 +20,7 @@
   <header class="topbar">
     <button id="tb-user" class="tb-user" type="button" title="Játékos váltása"><span id="tb-avatar">🧑‍🚀</span> <span id="tb-name">Játékos</span></button>
     <div class="tb-stats">
-      <span class="pill" title="Üzemanyag (pontok)">⛽ <b id="tb-pts">0</b></span>
+      <span class="pill" id="tb-pts-pill" title="Pontok"><span id="tb-pts-ic">⛽</span> <b id="tb-pts">0</b></span>
       <span class="pill" title="Napos sorozat">🔥 <b id="tb-streak">0</b></span>
       <button id="tb-big" class="pill btn-pill" type="button" title="Napi nagy cél">🏆 <b id="tb-big-n">0</b>/<span id="tb-big-goal">30</span><small id="tb-mult" class="mult"></small></button>
     </div>
@@ -31,7 +31,7 @@
     </div>
   </header>
 
-  <!-- Kezdőképernyő: küldetés + bolygótérkép -->
+  <!-- Kezdőképernyő: küldetés, napi nagy cél, rang, témák (a szövegeket a közös váz tölti ki) -->
   <main id="scr-home" class="screen on">
     <section class="hero">
       <div class="mascot" id="mascot" aria-hidden="true">🚀</div>
@@ -69,12 +69,12 @@
     <h2 class="section-title"><span id="map-title">Bolygók</span> <span class="soft small" id="map-hint"></span></h2>
     <p class="lock-note" id="lock-note" hidden></p>
     <section class="map" id="map"></section>
-    <p class="keys-hint">⌨️ <b>Tab</b> / <b>Shift+Tab</b>: lépés a bolygók között · <b>Enter</b>: indulás · <b>F1</b>: mi vár itt? · <b>Esc</b>: vissza</p>
+    <p class="keys-hint"></p>
 
     <h2 class="section-title">Jelvények</h2>
     <section class="badges" id="badges"></section>
 
-    <p class="pencil">✏️ Tipp: tarts magad mellett füzetet! A felvételin sincs számológép – számolj papíron.</p>
+    <p class="pencil" id="home-tip"></p>
   </main>
 
   <!-- Gyakorlás -->
@@ -92,7 +92,7 @@
         <div class="task-viz" id="task-viz"></div>
         <div class="answer" id="answer"></div>
         <div class="task-actions" id="task-actions"></div>
-        <p class="pencil small">✏️ Számolj a füzetedben!</p>
+        <p class="pencil small" id="play-tip"></p>
       </section>
       <aside class="card side" id="side">
         <div id="side-body" class="side-body">

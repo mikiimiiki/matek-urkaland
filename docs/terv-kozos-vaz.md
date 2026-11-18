@@ -275,10 +275,12 @@ Mindkét app a saját projektjében, ugyanazzal a szerkezettel: `families/{fam}/
 - A vázzal „ingyen” megjön a Matek 1–4. ütemének minden része: ⚙️ füles ablak, gyerekenkénti beállítások, szinkronmódok és részleges mentés, külön hibanapló-ág, forgalomszámláló, eszközfelismerés és hozzárendelés, 12 rangos létra és szekrény, gyorsbillentyű-modul (Tab, ←/→, 1–6, Enter, Esc, F1).
 
 **Átvétel:**
-- [ ] Régi állapotfájlból (a mostani éles adatból mentett másolat) adatvesztés nélkül áll át: pont, elsajátított szavak, szókártyák, sorozat, kinyitott tárgyak, napi 100 állása.
-- [ ] Minden feladattípus végigjátszható; a szókártya-ismétlés ugyanazokat a szavakat hozza esedékesnek.
-- [ ] Két böngészőben a régi (még nem frissült) és az új változat egymás mellett sem ront adatot.
-- [ ] A szótagolás-ellenőrző szkript és a meglévő tesztek zöldek.
+- [x] Régi állapotfájlból (a mostani éles adatból mentett másolat) adatvesztés nélkül áll át: pont, elsajátított szavak, szókártyák, sorozat, kinyitott tárgyak, napi 100 állása.
+- [x] Minden feladattípus végigjátszható; a szókártya-ismétlés ugyanazokat a szavakat hozza esedékesnek.
+- [x] Két böngészőben a régi (még nem frissült) és az új változat egymás mellett sem ront adatot.
+- [x] A szótagolás-ellenőrző szkript és a meglévő tesztek zöldek.
+
+> Megvalósítva (2026-11-18). Eltérések: az „Ismétlő kör” gomb helyett az esedékes szavak a vegyes kaland (napi küldetés) elejére kerülnek; a hiba utáni „írd le a helyes alakot” helyett a váz tipp → magyarázat → ikerfeladat menete érvényes; a betűkirakó és a szótagolás újrapróbája („a jó betűk zölden maradnak”) a tipp lépésére került. Az avatarok a 12 rangra egyenletesen oszlanak el a régi nehézségi sorrendben; a régi kinyitott tárgyak megmaradnak.
 
 ### 3. ütem – Keret-repó (a német előtt)
 
