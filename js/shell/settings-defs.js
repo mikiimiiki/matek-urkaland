@@ -14,6 +14,9 @@ export function settingsDefs(G, P) {
         { value: "skip", label: "Kihagyható", help: "Egy „Kihagyom” gombbal továbbléphet (akkor nem jár a +1 pont)." },
         { value: "off", label: "Kikapcsolt", help: "Nincs beírás, a magyarázat után rögtön jön a következő lépés." },
       ] }] : []),
+    // lépésenkénti súgó feladat közben: csak olyan játékban látszik, amelynek a csomagja kéri (PACK.stepHelp)
+    ...(P && P.stepHelp ? [{ key: "stepHelp", group: "play", scope: "child", type: "toggle", default: true, label: "💡 Lépésenkénti súgó feladat közben",
+      help: "A ❓ / F1 a megoldás következő lépését mutatja (a végeredményt soha), lépésenként −3 ponttal. Ha két egymás utáni feladatban végignyomja, a következőtől eggyel kevesebb lépés érhető el; 3 súgó nélküli feladat után eggyel több, 5 után minden visszajön." }] : []),
     { key: "dyslexia", group: "play", scope: "child", type: "toggle", default: false, label: "🔤 Diszlexia-barát betűtípus", help: "Jobban tagolt, könnyebben olvasható betűk és nagyobb betűköz." },
     // napi cél és szorzók
     { key: "goalTasks", group: "goal", scope: "child", type: "number", min: 3, max: 40, default: d.goalTasks ?? 10, unit: "feladat", label: "Napi küldetés – feladatok száma", help: "Ennyi feladat után teljesül a napi küldetés (vagy az alábbi idő után, ha az előbb telik le). Ez viszi a napos sorozatot." },

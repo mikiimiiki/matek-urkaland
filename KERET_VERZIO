@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.3.2",
-  "commit": "1774ad6",
+  "verzio": "1.4.0",
+  "commit": "07feb7f",
   "datum": "2026-11-18",
-  "ujjlenyomat": "176c84bcb5370471567a22fbd8aa59f53c1a54771fc253d2b57a9c4c4f85d234",
+  "ujjlenyomat": "6baab0d93683cd129661a5a54f6e04aa54099ee936f1634c0481be8c9df9a568",
   "fajlok": [
     "js/core/answers.js",
     "js/core/badges.js",
@@ -23,6 +23,7 @@
     "js/core/settings.js",
     "js/core/snow.js",
     "js/core/srs.js",
+    "js/core/stephelp.js",
     "js/core/syncdiff.js",
     "js/core/tabs.js",
     "js/shell/cloud-ui.js",

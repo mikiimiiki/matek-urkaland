@@ -14,6 +14,7 @@ const speechText = html => plain(String(html).replace(/<svg[\s\S]*?<\/svg>/g, " 
 
 export const PACK = {
   id: "matek",
+  stepHelp: true, // ❓ / F1 feladat közben: a levezetés következő lépése (a végeredményt soha)
   // a kezdőlap témakártyái (itt: bolygók)
   topics: TYPES.map(T => ({ id: T.id, name: T.name, icon: T.planet.emoji, color: T.planet.color, place: T.planet.name })),
   coming: COMING.map(c => ({ icon: c.emoji, place: c.name })),

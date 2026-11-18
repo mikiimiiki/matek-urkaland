@@ -5,6 +5,7 @@ import { modal, isOpen as isModalOpen } from "../core/modal.js";
 import { score, SCORING } from "../core/scoring.js";
 import { recordAnswer, addBonus, retypeState } from "../core/answers.js";
 import { checkBadges, COMMON_BADGES } from "../core/badges.js";
+import { shState, shCap, shEnd } from "../core/stephelp.js";
 import { missionProgress, completeMission, addCorrect, giftPending } from "../core/dailygoal.js";
 import { C, G, cur, prefs, save, confetti, speak } from "./ctx.js";
 import { show, renderTop, renderHome, freeSize, openTopics } from "./home.js";
@@ -12,7 +13,7 @@ import { celebrateRank } from "./collection.js";
 import { checkHolidays } from "./holidays.js";
 import { trophyRain, openGifts } from "./goal-ui.js";
 import { maybeAskDevice } from "./players.js";
-import { openHelp } from "./help.js";
+import { openHelp, openTopicHelp } from "./help.js";
 
 let S = null; // aktuális kör
 export const round = () => S;
@@ -37,7 +38,7 @@ function nextTask() {
   const task = C.pack.makeTask(item, C.rng, cur());
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
   clearTimeout(S.autoT);
-  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null });
+  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null });
   renderTask();
 }
 function renderDots() {
@@ -57,6 +58,8 @@ function renderTask() {
   $("answer").innerHTML = "";   // az előző feladat felülete ne maradjon ott
   S.ui = t.render($("answer"), { submit: () => onEnter(), answering: () => !!S && S.phase === "answer", toast, useHelp: () => { S.helps = (S.helps || 0) + 1; } });
   setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", check)]);
+  if (stepHelpOn()) S.helpCap = shCap((t.steps || []).length, shState(cur(), t.topic));
+  helpBadge();
   if (C.tts) speak(t.speech || t.q);
 }
 function setActions(bs) { const a = $("task-actions"); a.innerHTML = ""; bs.forEach(b => a.append(b)); }
@@ -90,6 +93,12 @@ function record(r, v) {
   const plain = x => String(x || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   recordAnswer(u, { topic: t.topic, r, ms: Date.now() - S.t0, pts: sc.pts, twin: S.twin,
     log: { s: t.sub, lvl: t.level, q: t.plainQ || plain(t.q).slice(0, 220), a: v == null ? "" : t.answerText(v), c: t.correctText, w: v != null ? plain(t.why(v) || "") : "" } });
+  if (stepHelpOn()) {
+    const sh = shEnd(shState(u, t.topic), S.helpShown || 0, S.helpCap || 1);
+    if (sh === "reduced") toast("💡 Ennél a témánál a súgó mostantól eggyel kevesebb lépést mutat. Ha 3 feladatot megoldasz nélküle, visszajön egy lépés.", 5500);
+    else if (sh === "back") toast("💡 Ügyes! Visszajött egy súgólépés.", 3500);
+    else if (sh === "all") toast("💡 Szuper! A súgó újra minden lépést mutat.", 3500);
+  }
   const ev = { pts: sc.pts, combo: S.combo, pack: C.pack.record(u, t, r), badges: checkBadges(u, [...COMMON_BADGES, ...(C.pack.badges || [])]), bigHit: false };
   if (r >= 1) ev.bigHit = addCorrect(u, P.bigGoal);   // helyes válasz (elsőre vagy tipp után) a nagy cél felé
   return ev;
@@ -97,7 +106,7 @@ function record(r, v) {
 const PRAISE = () => G().praise || ["Szuper!"];
 function correct() {
   const t = S.task, rr = S.tries === 0 ? 1 : 2;
-  S.phase = "done";
+  S.phase = "done"; helpBadge();
   S.ui.markRight();
   const ev = record(rr, rr === 2 ? S.firstWrong : null);
   S.res.push(rr); S.idx++;
@@ -111,7 +120,7 @@ function correct() {
 }
 function explain(v) {
   const t = S.task;
-  S.phase = "explain";
+  S.phase = "explain"; helpBadge();
   S.ui.lock();
   const ev = record(0, v);
   S.res.push(0); S.idx++;
@@ -211,7 +220,7 @@ function endRound() {
 export function goHome() {
   if ("speechSynthesis" in window) speechSynthesis.cancel();
   if (S) clearTimeout(S.autoT);
-  S = null; show("scr-home"); renderTop(); renderHome();
+  S = null; helpBadge(); show("scr-home"); renderTop(); renderHome();
   C.cloud.checkpoint("home"); maybeAskDevice(); checkHolidays();
   const u = cur();
   if (u && giftPending(u) && prefs(u).gifts !== false) setTimeout(() => openGifts(), 900);
@@ -275,6 +284,40 @@ function openRetype(t, acts, mode, showActs) {
   }, { esc: close => { close(); goHome(); } });   // Esc: ki a körből a főmenübe (a beírás nem kerülhető meg)
   // a háttérben is a helyes továbblépés álljon készen (ha az ablak valamiért bezárulna)
   setActions([]); S.onNext = null;
+}
+
+// ---------- 💡 Lépésenkénti súgó (ha a csomag kéri: PACK.stepHelp) ----------
+// Feladat közben a ❓ / F1 a megoldás levezetésének következő lépését mutatja – a végeredményt (utolsó lépés) soha.
+// Minden lépés egy segítség (pontlevonás). A csökkenés / visszatérés szabályai: js/core/stephelp.js.
+const stepHelpOn = () => !!(C.pack && C.pack.stepHelp && S && S.task && prefs(cur()).stepHelp !== false);
+function helpBadge() {
+  const b = $("tb-help"); if (!b) return;
+  const on = stepHelpOn() && S.phase === "answer", left = on ? Math.max(0, S.helpCap - S.helpShown) : 0;
+  b.innerHTML = on ? `❓<sup class="hb${left ? "" : " out"}">${left}</sup>` : "❓";
+  b.title = on ? `Súgó (F1) – még ${left} lépés` : "Súgó (F1)";
+}
+// true: lekezelte (feladat közben, bekapcsolt súgónál); false: a megszokott témaleírás jöjjön
+export function stepHelpPress() {
+  if (!stepHelpOn() || S.phase !== "answer") return false;
+  if (S.helpShown < S.helpCap) { S.helpShown++; S.helps = (S.helps || 0) + 1; }
+  renderStepHelp(); helpBadge();
+  return true;
+}
+function renderStepHelp() {
+  const t = S.task, steps = t.steps || [], single = steps.length <= 1, sb = $("side-body");
+  const cost = ((G().scoring || SCORING).help ?? SCORING.help);
+  sb.innerHTML = "";
+  sb.append(el("div", "fb hint", `<div class="fb-title">💡 Súgó · ${S.helpShown}/${S.helpCap} ${single ? "tipp" : "lépés"}</div>Minden lépés −${cost} pont. A végeredményt neked kell kiszámolnod!`));
+  const box = el("div", "steps");
+  if (single) box.append(el("div", "step", t.hint || ""));
+  else steps.slice(0, S.helpShown).forEach(s => box.append(el("div", "step", s)));
+  sb.append(box);
+  if (S.helpShown >= S.helpCap) {
+    sb.append(el("div", "fb hint sh-out", "Többet most nem mutathatok – a többit próbáld meg kiszámolni! 💪"));
+    sb.append(btn("secondary", "ℹ️ Mi ez a téma?", () => openTopicHelp(t.topic)));
+  } else sb.append(el("p", "soft small", "Nyomd meg újra a ❓ gombot (vagy az F1-et) a következő lépésért."));
+  if (C.tts) speak(single ? t.hint : steps[S.helpShown - 1]);
+  if (box.lastElementChild) box.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 // Teszteléshez (#debug): egy adott feladat megnyitása
