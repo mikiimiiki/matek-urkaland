@@ -15,6 +15,7 @@
 //                 devices/{eszköz} · members   (a szabályok a families/{fam} alatt mindent a tagoknak engednek)
 import { diff, merge, apply, stable, bytes, clone } from "./syncdiff.js";
 import { guessName, monthKey } from "./device.js";
+import { makeRetry } from "./retry.js";
 
 const FB_BASE = "https://www.gstatic.com/firebasejs/13.2.0/";
 const PUSH_DELAY = 1500;      // feladat után ennyi várakozással küldünk (ha gyorsan jön a következő válasz, egyben megy)
@@ -112,6 +113,11 @@ export function createCloud(api) {
     if (!user) return { ...base, icon: "🔑", text: "Belépés", detail: "Nincs belépve senki – az adatok csak ebben a böngészőben vannak. Kattints a belépéshez." };
     if (phase === "family") return { ...base, icon: "👪", text: slow ? "Család keresése (lassú)…" : "Család keresése…", cls: slow ? "warn" : "", detail: "Megnézzük, melyik családhoz tartozik a fiók." + (slow ? " " + slow : "") };
     if (!member) return { ...base, icon: "🏠", text: "Család beállítása", cls: "warn", detail: "A fiókhoz még nem tartozik család. Hozz létre egyet, vagy kérd meg a másik szülőt, hogy adjon hozzá." };
+    if (retry.active() && !inflight && !pulling && mode() !== "live") {
+      const n = retry.nextIn(), wait = retry.waitingVisible() ? "amint az app újra előtérbe kerül" : n == null ? "most" : `kb. ${dur(n)} múlva`;
+      return { ...base, icon: "📴", text: pend ? `Offline · ${pend} vár` : "Offline", cls: "warn",
+        detail: `Nincs kapcsolat a szerverrel${lastError ? ` (${lastError})` : ""}. Minden helyben mentődik${pend ? `, ${pend} játékos változása vár feltöltésre` : ""}. Következő próbálkozás: ${wait}.` };
+    }
     if (lastError) return { ...base, icon: "⛔", text: "Szinkron hiba", cls: "err", detail: lastError };
     const when = `Utolsó letöltés: ${lastDown ? hhmm(lastDown) : "–"}, utolsó mentés: ${lastUp ? hhmm(lastUp) : "–"}. Szinkronmód: ${MODE_TXT[mode()]}.`;
     if (paused) return { ...base, icon: "💤", text: pend ? `Szünetel · ${pend} vár` : "Szünetel", detail: `A kapcsolat szünetel (${pauseWhy}), hogy ne fogyjon feleslegesen a keret. Amint újra használod az appot, szinkronizál. ${when}` };
@@ -127,6 +133,20 @@ export function createCloud(api) {
     return { ...base, icon: "📡", text: pend ? `Szinkronban · ${pend} vár` : "Szinkronban", cls: "online", detail: when + (pend ? ` ${pend} játékos változása vár feltöltésre (${waitTxt}, vagy nyomd meg a „Mentés most” gombot).` : "") };
   }
   function emit() { if (api.onStatus) api.onStatus(status()); }
+  const dur = ms => ms < 60000 ? `${Math.max(1, Math.ceil(ms / 1000))} mp` : `${Math.round(ms / 60000)} perc`;
+
+  // ---- Újrapróbálkozás, ha a szerver nem érhető el (js/core/retry.js) ----
+  // 3× 15 mp → 3× 1 perc → 3× 5 perc → 15 percenként; csak ha van várakozó adat, és csak előtérben.
+  // A folyamatos módban a Firebase saját újrakapcsolódása dolgozik, ott ez nem fut.
+  const STAGE_TXT = ["15 mp múlva újrapróbálom", "mostantól percenként próbálom", "mostantól 5 percenként próbálom", "mostantól 15 percenként próbálom"];
+  const retry = makeRetry({
+    needed: () => ready() && mode() !== "live" && (pending.size > 0 || !gotData),
+    visible: () => document.visibilityState !== "hidden",
+    attempt: async () => { if (!gotData) await pull("újrapróbálás"); if (gotData) await flush(); return gotData && !pending.size; },
+    onStage: s => log(s > 0 ? "🐢" : "🔴", s > 0 ? `Továbbra sincs kapcsolat a szerverrel – ${STAGE_TXT[s]}.` : `Nem sikerült elérni a szervert – ${STAGE_TXT[0]}.`, true),
+    onRecover: () => log("🟢", "A kapcsolat helyreállt – a várakozó változások feltöltve."),
+    onChange: () => emit(),
+  });
 
   // Lassú lépés figyelése, tétlenség figyelése
   setInterval(() => {
@@ -136,6 +156,7 @@ export function createCloud(api) {
       log("🐢", phase === "family" ? "A családkeresés 15 mp óta nem válaszol." : "A szerverkapcsolat 15 mp óta nem jött létre.", true);
     }
     if (!paused && ready() && gotData && Date.now() - lastAct > IDLE_MS) pause("5 perce nincs használat");
+    if (retry.active()) emit();
   }, 5000);
 
   // ---- Kapcsolat: task/home módban csak a műveletek idejére nyitjuk ----
@@ -158,7 +179,7 @@ export function createCloud(api) {
   async function op(what, fn) {
     inflight++; emit();
     try { await ensureOnline(); const r = await fn(); lastUp = Date.now(); if (lastError && lastError.startsWith("Mentés")) lastError = null; return r; }
-    catch (e) { lastError = `Mentés (${what}): ${errText(e)}`; log("⛔", lastError, true); throw e; }
+    catch (e) { lastError = `Mentés (${what}): ${errText(e)}`; if (!retry.active()) log("⛔", lastError, true); throw e; }
     finally { inflight--; emit(); laterOffline(); }
   }
 
@@ -356,13 +377,14 @@ export function createCloud(api) {
       const first = !gotData; gotData = true; if (lastError && /olvas|Letölt/.test(lastError)) lastError = null;
       log("⬇️", `${first ? "Adatok letöltve" : "Letöltés"}${why ? ` (${why})` : ""}: ${Object.keys(users || {}).length} játékos${changed ? `, ${changed} frissült` : ""} · ${kb(total)}`);
       if (changed) api.refresh();
-    } catch (e) { lastError = `Letöltés: ${errText(e)}`; log("⛔", lastError, true); }
+      retry.succeeded();
+    } catch (e) { lastError = `Letöltés: ${errText(e)}`; if (!retry.active()) log("⛔", lastError, true); retry.failed(); }
     finally { pulling--; emit(); laterOffline(); }
   }
 
   // ---- Feltöltés: csak a változás (egyetlen update() hívás a család gyökerére) ----
   function schedule() {
-    if (mode() === "home" || paused) return;
+    if (mode() === "home" || paused || retry.active()) return;   // a lépcsőn a következő ütemezett próba viszi fel
     clearTimeout(pushT); pushT = setTimeout(flush, PUSH_DELAY);
   }
   function queue(name) { if (!ready()) return; pending.add(name); emit(); schedule(); }
@@ -394,7 +416,8 @@ export function createCloud(api) {
         Object.entries(per).forEach(([name, x]) => { snap.users[name] = apply(snap.users[name] || {}, x.d); snap.logs[name] = x.localKeys; delete snap.legacy[name]; });
         saveSnap();
         log("⬆️", `${Object.keys(per).join(", ")} mentve · ${Object.keys(up).length} mező · ${kb(sent)}`);
-      } catch { names.forEach(n => pending.add(n)); }
+        retry.succeeded();
+      } catch { names.forEach(n => pending.add(n)); retry.failed(); }
     })();
     try { await flushing; } finally { flushing = null; emit(); }
   }
@@ -463,6 +486,7 @@ export function createCloud(api) {
   // "home": főmenübe lépés, kör vége · "gear": a ⚙️ ablak nyitása · "now": Mentés most
   async function checkpoint(kind) {
     if (!ready()) return;
+    if (retry.active() && mode() !== "live") { if (kind === "now") retry.kick(true); return; }
     if (paused) return resume();
     if (mode() === "live") { await flush(); if (kind === "gear") pushDevice(true); return; }
     if (kind === "now") { await flush(); await pull("kézi"); }
@@ -499,13 +523,14 @@ export function createCloud(api) {
   ["pointerdown", "keydown", "touchstart", "wheel"].forEach(ev => addEventListener(ev, activity, { passive: true, capture: true }));
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") pause("az app háttérben van");
-    else activity();
+    else { activity(); retry.onVisible(); }
   });
+  addEventListener("online", () => { if (!ready()) return; log("🌐", "A böngésző szerint visszajött az internet."); retry.kick(true); });
   addEventListener("pagehide", () => { flush(); });
 
   // Újrakapcsolódás kézzel (a ☁️ panelről)
   function reconnect() {
-    lastError = null; paused = false; log("🔄", "Újrakapcsolódás kérve.");
+    lastError = null; paused = false; retry.reset(); log("🔄", "Újrakapcsolódás kérve.");
     if (fb && db) { try { fb.goOffline(db); online = false; goOnline(); } catch { /* régebbi SDK */ } }
     if (user) joinFamily(); else emit();
   }
