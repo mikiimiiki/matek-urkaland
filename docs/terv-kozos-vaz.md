@@ -287,6 +287,8 @@ Mindkét app a saját projektjében, ugyanazzal a szerkezettel: `families/{fam}/
 - `js/core/` + `js/shell/` saját repóba (pl. `urkaland-keret`), verziózva; `tools/keret-masolas` szkript, `KERET_VERZIO` fájl appankként; teszt jelzi a kézi eltérést.
 - Csomagsablon a némethez (`pack-template/`), rövid fejlesztői leírás.
 
+> Megvalósítva (2026-11-18): helyi `urkaland-keret` repó (keret 1.0.0) – közös keret és váz, minta szótanuló (der/die/das, szójelentés, begépelés) mint csomagsablon a némethez, `tools/keret-masolas.mjs` (`KERET_VERZIO`, `--check`), `tests/keret.test.mjs` az appokban, alap- és felhőtesztek, fejlesztői README. A GitHub-repó létrehozása a szülőre vár.
+
 ---
 
 ## 11. Tesztelés

@@ -64,6 +64,7 @@ node tests/sync.test.mjs
 node tests/ranks.test.mjs
 node tests/events.test.mjs
 node tests/shell.test.mjs
+node tests/keret.test.mjs
 node tests/cloud.test.mjs
 node tests/firebase-keys.test.mjs
 ```
@@ -104,3 +105,5 @@ A program váza közös és paraméterezhető; appankként csak a feladatok és 
 - `js/engine.js`: a csomag és a keret összekötője a tesztekhez.
 
 A `tests/shell.test.mjs` azt is ellenőrzi, hogy a `js/core` és a `js/shell` nem hivatkozik matekos fogalomra.
+
+**A közös keret forrása az `urkaland-keret` repó** (a `Felvételi_matek` mellett: `../urkaland-keret`). A `js/core`, `js/shell`, `css/style.css` és `tests/keret.test.mjs` fájlokat itt nem szerkesztjük: a keret-repóban változtatunk, majd `node tools/keret-masolas.mjs ../Felvételi_matek` másolja át őket. A `KERET_VERZIO` fájl rögzíti a verziót és az ujjlenyomatot; a `node tests/keret.test.mjs` jelzi, ha a másolatot kézzel átírták.
