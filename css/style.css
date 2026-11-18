@@ -53,7 +53,7 @@ h1, h2, h3 { margin: 0; }
 .pill { background: rgba(255,255,255,.12); border-radius: 99px; padding: 6px 12px; font-weight: 700; display: inline-flex; gap: 6px; align-items: center; color: #fff; font-size: 16px; }
 .btn-pill { border: 0; }
 /* Felhőjelző: csak ikon (a szöveg a felolvasóknak megmarad, a részletek a buborékban és a ☁️ ablakban) */
-#tb-cloud { padding: 6px 9px; gap: 0; }
+#tb-cloud, #tb-help { padding: 6px 9px; gap: 0; }
 #tb-sync { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .btn-pill.online { background: rgba(34,197,94,.3); } .btn-pill.err { background: rgba(220,38,38,.4); }
 .btn-pill.warn { background: rgba(217,119,6,.45); }
