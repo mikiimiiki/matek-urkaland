@@ -31,7 +31,7 @@ function holidayModal(title, text, reward) {
     const row = el("div", "mbtns"); row.style.justifyContent = "center";
     const it = reward.find(r => r.item && !r.item.startsWith("st:") && G().catalog.itemById(r.item));
     row.append(btn(it ? "secondary" : "primary", "Szuper! 🎉", () => close()));
-    if (it) row.append(btn("primary", "Megnézem a szekrényben ✨", () => { close(); openCollection("wardrobe", G().catalog.itemById(it.item).kind); }));
+    if (it) row.append(btn("primary", "Megnézem a gyűjteményedben ✨", () => { close(); openCollection("wardrobe", G().catalog.itemById(it.item).kind); }));
     box.append(row);
   });
 }

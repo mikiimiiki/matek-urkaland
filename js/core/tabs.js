@@ -18,7 +18,9 @@ export function openTabs(opts) {
   let api = null;
   modal((box, close) => {
     const head = el("div", "tabs-head");
-    head.append(el("h3", null, escHtml(opts.title)), btn("ghost tabs-x", "✕", () => close()));
+    // üres címnél nincs fejléc-szöveg, csak a bezáró gomb (jobbra igazítva)
+    if (opts.title) head.append(el("h3", null, escHtml(opts.title))); else { head.classList.add("notitle"); if (opts.ariaLabel) box.setAttribute("aria-label", opts.ariaLabel); }
+    head.append(btn("ghost tabs-x", "✕", () => close()));
     head.lastChild.setAttribute("aria-label", "Bezárás (Esc)");
     const bar = el("div", "tabs-bar"); bar.setAttribute("role", "tablist");
     const kids = el("div", "tabs-kids");

@@ -124,7 +124,7 @@ export function createCloud(api) {
       if (!gotData) return { ...base, icon: "⬇️", text: "Letöltés…", detail: "A család adatainak letöltése." };
     } else if (!gotData) return { ...base, icon: "🔌", text: slow ? "Kapcsolódás (lassú)…" : "Kapcsolódás…", cls: slow ? "warn" : "", detail: "Az első letöltés folyamatban." + (slow ? " " + slow : "") };
     const waitTxt = mode() === "home" ? "a főmenübe lépéskor megy fel" : "pár másodpercen belül felmegy";
-    return { ...base, icon: "✅", text: pend ? `Szinkronban · ${pend} vár` : "Szinkronban", cls: "online", detail: when + (pend ? ` ${pend} játékos változása vár feltöltésre (${waitTxt}, vagy nyomd meg a „Mentés most” gombot).` : "") };
+    return { ...base, icon: "📡", text: pend ? `Szinkronban · ${pend} vár` : "Szinkronban", cls: "online", detail: when + (pend ? ` ${pend} játékos változása vár feltöltésre (${waitTxt}, vagy nyomd meg a „Mentés most” gombot).` : "") };
   }
   function emit() { if (api.onStatus) api.onStatus(status()); }
 
