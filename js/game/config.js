@@ -13,7 +13,7 @@ export const GAME = {
   id: "matek-urkaland",
   title: "Matek Űrkaland",
   settingsTitle: "⚙️ Szülői beállítások",
-  storeKey: "matek_urkaland_v1", simKey: "matek_urkaland_sim",
+  storeKey: "matek_urkaland_v1", simKey: "matek_urkaland_sim", serviceWorker: "sw.js",
   firebase: FIREBASE_CONFIG,
   // téma és szavak
   logo: "🚀", mascot: "🧑‍🚀",

@@ -89,5 +89,6 @@ export function startShell({ game, pack }) {
   setTimeout(checkHolidays, 1200);
   setTimeout(maybeAskDevice, 1500);
   setTimeout(() => { const u = cur(); if (u) { turboGreet(); openGifts(); } }, 1800);
-  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+  // offline működés: csak ha a játéknak van service workere (GAME.serviceWorker)
+  if (game.serviceWorker && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register(game.serviceWorker).catch(() => {});
 }
