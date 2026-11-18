@@ -461,6 +461,8 @@ export function createCloud(api) {
     // a hozzárendelést csak akkor írjuk, ha a helyi frissebb (a szülő egy másik eszközön is módosíthatta)
     if (dev.kidsUpd && dev.kidsUpd >= ((remoteDev && remoteDev.kidsUpd) || 0)) { up.kids = dev.kids; up.kidsUpd = dev.kidsUpd; }
     if (remoteDev && (remoteDev.nameUpd || 0) > (dev.nameUpd || 0)) { delete up.name; delete up.nameUpd; }
+    // csak a változás megy fel: ami a felhőben már ugyanígy van (név, típus, első használat, mód…), az nem
+    if (remoteDev) Object.keys(up).forEach(k => { if (k !== "lastSeen" && !k.startsWith("traffic/") && stable(remoteDev[k] ?? null) === stable(clean(up[k]) ?? null)) delete up[k]; });
     // a kulcsok útvonalak (pl. traffic/2026-11) – csak az értékeket tisztítjuk
     const payload = Object.fromEntries(Object.entries(up).map(([k, v]) => [k, clean(v)]));
     op("eszköz", () => { countUp(payload); return fb.update(fb.ref(db, `families/${fam()}/devices/${dev.id}`), payload); })
