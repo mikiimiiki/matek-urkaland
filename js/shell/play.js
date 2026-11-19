@@ -20,7 +20,8 @@ export const round = () => S;
 
 export function startMission() {
   const u = cur(), P = prefs(u), mp = missionProgress(u, P);
-  const n = mp.done ? 5 : Math.max(1, P.goalTasks - mp.n);
+  // a küldetés aznap összesen goalTasks feladat (a már megoldottak beszámítanak); utána a plusz kör is ennyi feladat
+  const n = mp.done ? P.goalTasks : Math.max(1, P.goalTasks - mp.n);
   S = { mode: "mission", plan: C.pack.plan(u, n, C.rng, openTopics(u)), idx: 0, res: [], combo: 0 };
   show("scr-play"); $("play-title").textContent = mp.done ? G().texts.plus : G().texts.mission;
   nextTask();
