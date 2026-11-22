@@ -16,6 +16,8 @@ import { maybeAskDevice } from "./players.js";
 import { openHelp, openTopicHelp } from "./help.js";
 
 let S = null; // aktuális kör
+// „Vissza a főmenüre / térképre / bázisra”: a -ra/-re az utolsó nem i/í magánhangzó szerint (az i, í semleges)
+const backHome = () => { const w = G().homeWord, v = (w.match(/[aáeéoóöőuúüű]/gi) || ["e"]).pop(); return `Vissza a ${w}${/[aáoóuú]/i.test(v) ? "ra" : "re"}`; };
 export const round = () => S;
 
 export function startMission() {
@@ -32,6 +34,35 @@ export function startFree(topicId) {
   S = { mode: "free", topic: topicId, plan: Array.from({ length: n }, () => ({ topic: topicId, sub: null })), idx: 0, res: [], combo: 0 };
   show("scr-play"); $("play-title").textContent = `${t.icon} ${t.place || t.name} – ${n} feladat`;
   nextTask();
+}
+// 🩹 Ismétlő kör: a csomag hibás / ismétlésre váró feladataiból (PACK.review). A kör hossza a szabad
+// gyakorláséval azonos (a szülő állítja), de legfeljebb annyi, ahány ismétlendő feladat van.
+export function startReview() {
+  const u = cur(), R = C.pack.review; if (!R) return;
+  const n = Math.min(R.count(u), freeSize());
+  if (!n) return toast("Nincs mit ismételni – ügyes vagy! 🎉");
+  const plan = R.plan(u, n, C.rng, openTopics(u));
+  if (!plan.length) return toast("🔒 Az ismétlendő feladatok most le vannak zárva.");
+  S = { mode: "review", plan, idx: 0, res: [], combo: 0 };
+  show("scr-play"); $("play-title").textContent = `🩹 Ismétlő kör – ${plan.length} feladat`;
+  nextTask();
+}
+function reviewEnd(ok, all) {
+  const R = C.pack.review, left = R ? R.count(cur()) : 0, flawless = ok === all;
+  if (flawless) confetti();
+  modal((box, close) => {
+    box.classList.add("celebrate");
+    const done = !left;
+    box.append(el("div", "big-emoji", done && flawless ? "🏆" : done ? "🩹" : flawless ? "🌟" : "💪"),
+      el("h3", null, done && flawless ? "Ügyes vagy, az összes hibát kijavítottad!" : done ? "Elfogytak az ismétlendő feladatok!" : "Ismétlő kör vége!"),
+      el("p", null, `<b>${ok}</b> feladat sikerült elsőre a ${all}-ból.` + (left ? `<br>Még ${left} ${esc(R.unit || "hibás feladat")} vár ismétlésre.` : done && !flawless ? "<br>Ami most nem sikerült, az pár nap múlva újra előjön." : "")),
+      el("div", "dots", S.res.map(r => `<i class="${r === 1 ? "ok" : r === 2 ? "mid" : "bad"}"></i>`).join("")));
+    box.lastChild.style.justifyContent = "center"; box.lastChild.style.margin = "8px 0";
+    const row = el("div", "mbtns"); row.style.justifyContent = "center";
+    row.append(btn(left ? "secondary" : "primary", backHome(), () => { close(); goHome(); }));
+    if (left) row.append(btn("primary", "🩹 Még egy ismétlő kör", () => { close(); startReview(); }));
+    box.append(row);
+  }, { esc: close => { close(); goHome(); } });
 }
 function nextTask() {
   if (S.idx >= S.plan.length) return endRound();
@@ -198,13 +229,14 @@ function celebrate(me) {
       el("p", null, `🔥 <b>${me.streak} napos</b> sorozat!${me.shieldUsed ? "<br>🛡️ A heti pajzs megvédte a sorozatodat." : ""}`),
       el("p", null, me.badges.map(b => `${b.ic} ${b.n}`).join("<br>")));
     const row = el("div", "mbtns"); row.style.justifyContent = "center";
-    row.append(btn("secondary", "Még gyakorlok", () => close()), btn("primary", `Vissza a ${G().homeWord}ra`, () => { close(); goHome(); }));
+    row.append(btn("secondary", "Még gyakorlok", () => close()), btn("primary", backHome(), () => { close(); goHome(); }));
     box.append(row);
   });
 }
 function endRound() {
   C.cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
   const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, t = C.pack.topics.find(x => x.id === S.topic);
+  if (mode === "review") return reviewEnd(ok, all);
   if (mode !== "free") { toast(`Kör vége: ${ok}/${all} elsőre jó. ${G().logo}`); return goHome(); }
   if (ok === all) confetti();
   modal((box, close) => {
@@ -214,7 +246,7 @@ function endRound() {
       el("div", "dots", S.res.map(r => `<i class="${r === 1 ? "ok" : r === 2 ? "mid" : "bad"}"></i>`).join("")));
     box.lastChild.style.justifyContent = "center"; box.lastChild.style.margin = "8px 0";
     const row = el("div", "mbtns"); row.style.justifyContent = "center";
-    row.append(btn("secondary", `Vissza a ${G().homeWord}ra`, () => { close(); goHome(); }), btn("primary", "🔁 Még egy kör", () => { close(); startFree(t.id); }));
+    row.append(btn("secondary", backHome(), () => { close(); goHome(); }), btn("primary", "🔁 Még egy kör", () => { close(); startFree(t.id); }));
     box.append(row);
   }, { esc: close => { close(); goHome(); } });
 }

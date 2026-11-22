@@ -7,7 +7,8 @@ import { plain } from "./util.js";
 import { helpSteps } from "./helpmask.js";
 import { PLANET_INFO } from "./planet-info.js";
 import { renderAnswer } from "./answer-ui.js";
-import { typeState, typeLvl, subKey, subAcc, subColor, pickSub, planMission, recordProgress, starsTotal, PACK_BADGES } from "./progress.js";
+import { typeState, typeLvl, subKey, subAcc, subColor, pickSub, planMission, recordProgress, starsTotal, PACK_BADGES, reviewNote, reviewCount, planReview } from "./progress.js";
+import { makeRng } from "../core/rng.js";
 import { el, escHtml } from "../core/dom.js";
 
 const speechText = html => plain(String(html).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<table[\s\S]*?<\/table>/g, " "))
@@ -29,6 +30,7 @@ export const PACK = {
     // régi, ponttal írt kulcsok átalakítása ("T1.kerekites" → "T1:kerekites")
     Object.keys(u.subs).forEach(k => { if (k.includes(".")) { u.subs[k.replace(".", ":")] = u.subs[k]; delete u.subs[k]; } });
     Object.values(u.subs).forEach(s => { s.last = arr(s.last); });
+    u.review = arr(u.review);
     return u;
   },
 
@@ -44,10 +46,12 @@ export const PACK = {
   makeTask(item, rng, u) {
     const T = typeById(item.topic), level = item.level || typeLvl(u, T.id);
     const sub = item.sub || pickSub(u, T, level, rng);
-    const t = makeRaw(T, sub, level, rng), S = T.subs.find(s => s.id === sub);
+    // minden feladat saját magból (seed) generálódik – így egy elrontott feladat az ismétlő körben pontosan ugyanígy jön újra
+    const seed = item.seed != null ? item.seed : (Math.floor(rng.next() * 2147483646) + 1);
+    const t = makeRaw(T, sub, level, makeRng(seed)), S = T.subs.find(s => s.id === sub);
     const A = t.ans, multi = A.kind === "numset" || A.kind === "pick" || A.kind === "combos";
     return {
-      topic: T.id, sub, level, raw: t,
+      topic: T.id, sub, level, seed, raw: t,
       meta: `${T.planet.emoji} ${T.name} · ${S.name} · ${level}. szint`,
       q: t.q, viz: t.viz || "",
       render: (box, io) => renderAnswer(A, box, io),
@@ -63,7 +67,10 @@ export const PACK = {
       speech: t.q, plainQ: speechText(t.q).slice(0, 220),
     };
   },
+  // 🩹 Ismétlő kör: az elrontott feladatok pontosan ugyanúgy (a kör hossza a keret beállításából jön)
+  review: { unit: "elrontott feladat", count: reviewCount, plan: (u, n, rng, allowed) => planReview(u, n, rng, allowed) },
   record: (u, task, r) => {
+    reviewNote(u, task, r);
     const star = recordProgress(u, task, r);
     if (!star) return null;
     const T = typeById(star.topic);

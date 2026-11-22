@@ -66,6 +66,24 @@ export function recordProgress(u, task, r, today = dayNum()) {
   return star;
 }
 
+// ---- 🩹 Ismétlő kör: az elrontott feladatok, pontosan ugyanúgy újra ----
+// Minden feladat egy magból (seed) generálódik; hibás válasznál (magyarázat után) a téma, az altípus, a szint és a mag
+// a listára kerül, így az ismétlő kör ugyanazt a feladatot állítja elő. Ha elsőre jó, lekerül. Legfeljebb REVIEW_MAX.
+export const REVIEW_MAX = 30;
+const reviewList = u => (u.review = Array.isArray(u.review) ? u.review : Object.values(u.review || {}));
+const sameTask = task => x => x.topic === task.topic && x.sub === task.sub && x.seed === task.seed;
+export function reviewNote(u, task, r) {
+  if (task.seed == null) return;
+  const L = reviewList(u), i = L.findIndex(sameTask(task));
+  if (r === 1) { if (i >= 0) L.splice(i, 1); return; }
+  if (r === 0 && i < 0) { L.push({ topic: task.topic, sub: task.sub, level: task.level, seed: task.seed }); if (L.length > REVIEW_MAX) L.splice(0, L.length - REVIEW_MAX); }
+}
+export const reviewCount = u => reviewList(u).filter(x => typeById(x.topic)).length;
+export function planReview(u, n, rng, allowed) {
+  return rng.shuffle(reviewList(u).filter(x => typeById(x.topic) && (!allowed || allowed.includes(x.topic)))).slice(0, n)
+    .map(x => ({ topic: x.topic, sub: x.sub, level: x.level, seed: x.seed }));
+}
+
 // ---- A csomag jelvényei ----
 export const PACK_BADGES = [
   { id: "star1", ic: "⭐", n: "Első csillag", t: u => starsTotal(u) >= 1 },

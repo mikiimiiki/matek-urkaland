@@ -4,7 +4,7 @@ import * as keys from "../core/keys.js";
 import { missionProgress, streakNow, shieldAvailable, bigProgress } from "../core/dailygoal.js";
 import { C, G, cur, prefs, applyLook, itemIcon, rewardProgress, rewardKinds } from "./ctx.js";
 import { allowedUsers, userLocked } from "./players.js";
-import { startFree, playKeys, homeKeys } from "./play.js";
+import { startFree, startReview, playKeys, homeKeys } from "./play.js";
 import { renderAdvent } from "./holidays.js";
 import { COMMON_BADGES } from "../core/badges.js";
 
@@ -77,6 +77,13 @@ export function renderHome() {
   renderAdvent(u);
   // témakártyák (a lezártak 🔒-vel)
   const map = $("map"), bl = blockedTopics(u); map.innerHTML = "";
+  // 🩹 Ismétlő kör: ha a csomag tud ilyet (PACK.review), és van mit ismételni (hibás / esedékes feladatok)
+  const rv = C.pack.review ? C.pack.review.count(u) : 0;
+  if (rv > 0) {
+    const rb2 = btn("tcard review", `<div class="orb" style="background:#ef4444;--glow:#ef4444">🩹</div><div class="pname">Ismétlő kör</div><div class="ptype">${rv} ${esc(C.pack.review.unit || "hibás feladat")}</div><div class="plvl">${Math.min(rv, freeSize())} feladat egy körben</div>`, () => startReview());
+    rb2.title = "Ismétlő kör – a hibás és ismétlésre váró feladatok (Enter: indulás)";
+    map.append(rb2);
+  }
   C.pack.topics.forEach(t => {
     const st2 = C.pack.status(u, t.id), locked = bl.includes(t.id);
     const b2 = btn("tcard" + (locked ? " blocked" : ""), `<div class="orb" style="background:${t.color};--glow:${t.color}">${t.icon}</div><div class="pname">${esc(t.place || t.name)}</div><div class="ptype">${esc(t.name)}</div><div class="pstars">${[1, 2, 3].map(i => `<span class="${st2.stars >= i ? "" : "off"}">⭐</span>`).join("")}</div><div class="plvl">${locked ? "🔒 most szünetel" : esc(st2.label)}</div>`, () => { if (locked) return toast("🔒 Ezt most lezárták, hogy a többire jusson idő. Válassz egy másikat!"); startFree(t.id); });

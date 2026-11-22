@@ -4,7 +4,7 @@ export function settingsDefs(G, P) {
   const d = G.defaults || {}, topic = (G.topicWord || {}).acc || "témára";
   return [
     // gyakorlás
-    { key: "freeTasks", group: "play", scope: "child", type: "select", options: [3, 5, 10], default: d.freeTasks ?? 5, unit: "feladat", label: "Szabad gyakorlás egy körben", help: `Ennyi feladatból áll egy kör, ha a gyerek egy ${topic} kattint.` },
+    { key: "freeTasks", group: "play", scope: "child", type: "select", options: [3, 5, 10], default: d.freeTasks ?? 5, unit: "feladat", label: "Szabad gyakorlás egy körben", help: `Ennyi feladatból áll egy kör, ha a gyerek egy ${topic} vagy az 🩹 Ismétlő körre kattint (az ismétlő kör legfeljebb ahány hibás feladat van).` },
     { key: "tts", group: "play", scope: "child", type: "toggle", default: false, label: "🔊 Felolvasás alapból bekapcsolva", help: "A feladatot és a magyarázatot a gép felolvassa (a 🔊 gombbal a gyakorlásban is kapcsolható)." },
     // a helyes alak beírása hibás válasz után: csak olyan játékban látszik, amelynek a csomagja kér beírást (PACK.retype)
     ...(P && P.retype ? [{ key: "retype", group: "play", scope: "child", type: "radio", default: d.retype ?? "must", label: "✍️ Hibás válasz után a helyes alak beírása",

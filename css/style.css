@@ -54,6 +54,8 @@ h1, h2, h3 { margin: 0; }
 .btn-pill { border: 0; }
 /* Felhőjelző: csak ikon (a szöveg a felolvasóknak megmarad, a részletek a buborékban és a ☁️ ablakban) */
 #tb-cloud, #tb-help { padding: 6px 9px; gap: 0; }
+/* 🩹 Ismétlő kör kártyája a főképernyőn */
+.tcard.review { box-shadow: 0 0 0 3px #fca5a5, 0 6px 0 rgba(0,0,0,.15); }
 /* 💡 lépésenkénti súgó: a ❓ gombon a hátralévő lépések száma */
 #tb-help sup.hb { font-size: 11px; font-weight: 900; line-height: 1; background: #facc15; color: #422006; border-radius: 999px; padding: 2px 5px; margin-left: 2px; vertical-align: 6px; }
 #tb-help sup.hb.out { background: rgba(255,255,255,.25); color: #fff; }
