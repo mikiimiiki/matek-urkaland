@@ -14,7 +14,7 @@ A felépítés ugyanaz, mint a Massalhangzok appnál, de **külön Firebase-proj
 
 1. A projekt kezdőlapján kattints a **`</>`** (Web) ikonra.
 2. Név: `Matek Űrkaland`. A „Firebase Hosting” jelölőnégyzet maradjon üresen, mert GitHub Pages-en fog futni.
-3. A megjelenő `firebaseConfig` értékeit másold be a [js/firebase-config.js](js/firebase-config.js) fájlba (apiKey, authDomain, projectId stb.).
+3. A megjelenő `firebaseConfig` értékeit másold be a [js/game/firebase-config.js](js/game/firebase-config.js) fájlba (apiKey, authDomain, projectId stb.).
 
 ## 3. Google-belépés bekapcsolása
 
@@ -27,12 +27,12 @@ A felépítés ugyanaz, mint a Massalhangzok appnál, de **külön Firebase-proj
 1. **Build → Realtime Database → Create database**.
 2. Helyszín: **Belgium (europe-west1)**.
 3. Indulj **locked mode**-ban.
-4. Másold ki az adatbázis címét (pl. `https://matek-urkaland-default-rtdb.europe-west1.firebasedatabase.app`), és írd be a `databaseURL` mezőbe a `js/firebase-config.js` fájlban.
+4. Másold ki az adatbázis címét (pl. `https://matek-urkaland-default-rtdb.europe-west1.firebasedatabase.app`), és írd be a `databaseURL` mezőbe a `js/game/firebase-config.js` fájlban.
 5. **Rules** fül: töröld a meglévő szabályokat, másold be a [database.rules.json](database.rules.json) tartalmát, majd kattints a **Publish** gombra.
 
 ## 5. Feltöltés és első belépés
 
-1. Töltsd fel a módosított `js/firebase-config.js` fájlt a GitHub-repóba.
+1. Töltsd fel a módosított `js/game/firebase-config.js` fájlt a GitHub-repóba.
 2. Nyisd meg az appot, majd **☁️ → Belépés Google-lel → Család létrehozása**. Az ezen az eszközön lévő eredmények ekkor feltöltődnek.
 3. **☁️ → Másik szülő hozzáadása**: írd be a másik szülő Google-fiókjának e-mail-címét. Ő belépés után ugyanazt a családot látja.
 4. A többi eszközön (pl. a gyerek laptopján) elég egyszer belépni a szülő fiókjával.
