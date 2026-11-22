@@ -84,5 +84,13 @@ const D = k => keyToDay(k), P = { goalTasks: 10, goalMin: 15, bigGoal: 30 };
   ok(!bad.length, "a js/core és js/shell nem hivatkozik matekos fogalomra" + (bad.length ? "\n   " + bad.slice(0, 8).join("\n   ") : ""));
 }
 
+// a service worker (sw.js) minden saját JS-fájlt gyorsítótáraz – különben frissítés után offline hiányozhat egy fájl
+{
+  const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+  const walk = d => readdirSync(new URL("../" + d, import.meta.url), { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d + "/" + e.name) : e.name.endsWith(".js") ? [d + "/" + e.name] : []);
+  const missing = walk("js").filter(f => !sw.includes(`"${f}"`));
+  ok(!missing.length, "a sw.js minden JS-fájlt tartalmaz" + (missing.length ? ": hiányzik " + missing.join(", ") : ""));
+}
+
 console.log(fails ? `\n✗ ${fails} hiba` : "\n✓ Minden teszt rendben");
 process.exit(fails ? 1 : 0);

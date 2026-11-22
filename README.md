@@ -22,29 +22,31 @@ Build nélküli, sima HTML + JavaScript webapp. GitHub Pages-en fut, offline is 
   - ⭕ Halmazábra: leolvasás pöttyös ábráról, számok elhelyezése két tulajdonság szerint, szöveges halmazfeladat (mindkettőre / egyikre sem)
   - 🎲 Kombinatorika: „sorold fel az összes lehetőséget” – választás (sorrend nem számít), tornyok és zászlók feltételekkel, öltöztetés/menü, útvonalak ábrán, számok kártyákból, „hányféleképpen?”. A gyerek betűgombokkal rakja ki a lehetőségeket, a hibás (felesleges) lehetőséget a program megjelöli és megindokolja.
 - **Hibakezelés:** első hibánál tipp, a második hibánál lépésenkénti, képes magyarázat. Ilyenkor a gyerek a saját válaszát is látja, a felismert hibával együtt („úgy számoltál, mintha egy órában 100 perc lenne”). Utána ikerfeladat jön, a hibás típus pedig 1, 3 és 7 nap múlva visszatér.
-- **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás és pontlevonás nincs.
+- **💡 Lépésenkénti súgó (❓ / F1 feladat közben):** a jobb oldali sávban a levezetés következő lépése jelenik meg, a végeredmény soha (a lépésekben „?” áll a helyén; ahol az ábra vagy a felsorolás elárulná, ott kimarad vagy csak a tipp jön – `js/pack/helpmask.js`). Lépésenként −3 pont (legalább 2 marad), a ❓ gombon a hátralévő lépések száma látszik. Ha két egymás utáni feladatban végignyomja, a következőtől eggyel kevesebb lépés érhető el; 3 súgó nélküli feladat után eggyel több, 5 után minden visszajön. Gyerekenként kikapcsolható.
+- **🩹 Ismétlő kör:** ha van elrontott feladat, a térképen megjelenik az „Ismétlő kör” kártya. Pontosan ugyanazok a feladatok jönnek újra (minden feladat saját magból generálódik, az elrontottak magja eltárolódik, legfeljebb 30). Elsőre jó válasz után a feladat lekerül; ha mind elfogyott és hibátlan volt: „Ügyes vagy, az összes hibát kijavítottad!”. A kör hossza a szabad gyakorlás beállítása.
+- **Motiváció:** űr téma, bolygótérkép, típusonként 3 csillag (3 egymás utáni elsőre jó válasz), üzemanyag-pontok, rangok, jelvények, napi sorozat heti egy pajzzsal, a szülő által beállított valódi jutalmak. Időnyomás nincs, rossz válaszért nem jár pontlevonás (csak a súgó lépései kerülnek pontba).
 - **Szabad gyakorlás:** a térképen egy bolygóra kattintva rögzített hosszú kör indul abból a típusból (3, 5 vagy 10 feladat – gyerekenként állítható a ⚙️ Beállítások fülön); az üres karikák már az elején mutatják, hány feladat lesz, a kör végén összegzés.
-- **Napi küldetés:** alapból 10 feladat vagy 15 perc (gyerekenként állítható). Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés. Ez viszi a napos sorozatot (hetente 1 pajzs).
+- **Napi küldetés:** alapból 10 feladat vagy 15 perc (gyerekenként állítható); ha aznap már volt megoldott feladat, a kör a hátralévőt adja. Kb. 60% gyenge vagy új típus, 30% ismétlés, 10% meglepetés. Ez viszi a napos sorozatot (hetente 1 pajzs). Teljesítés után a „Még egy kör” is a beállított napi feladatszámú.
 - **Napi nagy cél:** alapból 30 helyes válasz → 🏆 serlegeső és a kör végén ajándékdoboz (holnapi előleg, puszi, ölelés…). A szülő aznapra ×2/×3 pontszorzót adhat, és lezárhat bolygókat (témazár).
 - **Egységes pontozás:** elsőre jó 10 (2. szinten +2, 3. szinten +5), tipp után 5, magyarázat után 2, sorozatbónusz +3 a 3. egymás utáni elsőre jótól, hibából tanulás +3.
 - **⚙️ Szülői beállítások (PIN-nel), felugró ablakban, 6 fülön:**
   - 📊 **Fejlődés:** Ma / 7 nap / 30 nap csempék, diagram napi, heti vagy havi bontásban (oszlop: feladatszám, vonal: elsőre jó arány), bolygónkénti sávok ▲/▼ változással az előző időszakhoz képest;
   - 🗺️ **Bolygók:** csillagok, szintek, altípusok állapota színekkel;
   - 📝 **Hibák:** hibanapló bolygó szerinti szűréssel;
-  - ⚙️ **Beállítások:** napi cél, szabad kör hossza, felolvasás és jutalmak **gyerekenként**, családi alapértékkel;
+  - ⚙️ **Beállítások:** napi cél, szabad kör hossza, lépésenkénti súgó, felolvasás, diszlexia-barát betű, ünnepek és jutalmak **gyerekenként**, családi alapértékkel;
   - 👪 **Család:** játékosok (átnevezés, törlés), **eszközök táblázata**: melyik eszközön ki játszhat (pipákkal), PIN;
-  - ☁️ **Felhő:** szinkronmód ehhez az eszközhöz, **adatforgalom** (ez az eszköz és a család összesen) és becsült Spark-felhasználás, belépés, családtagok.
+  - ☁️ **Felhő:** szinkronmód ehhez az eszközhöz (csak itt állítható és látható), **adatforgalom** (ez az eszköz és a család összesen) és becsült Spark-felhasználás, belépés, családtagok.
 
   Billentyűk az ablakban: ←/→ vagy 1–6 fülváltás, Tab lépés, F1 a fül súgója, Esc bezárás.
-- **Ranglétra és szekrény:** 12 rang (Űrkadét → Csillagflotta-legenda) a ⛽ alapján. A kezdőlap rangsávja mutatja, mennyi hiányzik és kb. hány nap (az utolsó 7 nap tempójával); rákattintva nagy áttekintő nyílik a létrával és a szekrénnyel. Rangonként új avatar, háttér, rakéta, konfetti vagy névkeret nyílik, új rangnál ünneplés. A meglévő avatar akkor is megmarad, ha a rang szerint még zárva lenne.
-- **Ünnepek (2026/27 tél):** 🎄 adventi naptár dec. 1–24. a kezdőlapon (a mai ablak a napi küldetés után nyílik; egy plusz kör – a napi cél után még 5 feladat – után naponta egy kihagyott ablak pótolható), 🎅 Mikulás dec. 6-án, 🎄 karácsony dec. 24–26., 🎆 szilveszter/újév, ❄️ hóesés dec. 1. – jan. 6. Az ünnepi tárgyak (Mikulás- és hóember-avatar, karácsonyi háttér és rakéta, hópehely- és tűzijáték-konfetti, 2027-es keret) a szekrénybe kerülnek. Gyerekenként kikapcsolható (⚙️ Beállítások), a hóesés csökkentett mozgásnál magától nem fut.
+- **Ranglétra és Gyűjteményem:** 12 rang (Űrkadét → Csillagflotta-legenda) a ⛽ alapján. A kezdőlap rangsávja mutatja, mennyi hiányzik és kb. hány nap (az utolsó 7 nap tempójával); rákattintva a 🎒 Gyűjtemény nyílik a létrával és a „Gyűjteményem” füllel (a tárgyak, nevükkel). Rangonként új avatar, háttér, rakéta, konfetti vagy névkeret nyílik, új rangnál ünneplés. A meglévő avatar akkor is megmarad, ha a rang szerint még zárva lenne.
+- **Ünnepek (2026/27 tél):** 🎄 adventi naptár dec. 1–24. a kezdőlapon (a mai ablak a napi küldetés után nyílik; ha a küldetés után még legalább 5 feladatot megold – pl. egy plusz kör –, naponta egy kihagyott ablak pótolható), 🎅 Mikulás dec. 6-án, 🎄 karácsony dec. 24–26., 🎆 szilveszter/újév, ❄️ hóesés dec. 1. – jan. 6. Az ünnepi tárgyak (Mikulás- és hóember-avatar, karácsonyi háttér és rakéta, hópehely- és tűzijáték-konfetti, 2027-es keret) a Gyűjteményembe kerülnek. Gyerekenként kikapcsolható (⚙️ Beállítások), a hóesés csökkentett mozgásnál magától nem fut.
 - **Dátum szimulálása teszteléshez:** `index.html?nap=2026-12-06#debug` – külön tesztadatokkal és felhő nélkül fut, a valódi adatok nem változnak.
-- **Szinkronmódok (eszközönként):** ⚡ folyamatos · ✅ minden feladat után (ajánlott, alapértelmezett) · 🏠 főmenübe lépéskor. Csak a megváltozott mezők mennek fel (egy feladat kb. 0,3–0,6 KB), a hibanapló külön ágon van, és csak a Hibák fül nyitásakor töltődik le. 5 perc tétlenség vagy háttérbe kerülés után a kapcsolat szünetel (💤).
+- **Szinkronmódok (eszközönként):** ⚡ folyamatos · ✅ minden feladat után (ajánlott, alapértelmezett) · 🏠 főmenübe lépéskor. Csak a megváltozott mezők mennek fel (egy feladat kb. 0,1–0,3 KB, az eszközadatokból is csak a változás), a hibanapló külön ágon van, és csak a Hibák fül nyitásakor töltődik le. 5 perc tétlenség vagy háttérbe kerülés után a kapcsolat szünetel (💤). Ha a szerver nem érhető el: lépcsőzetes újrapróbálkozás (3× 15 mp → 3× 1 perc → 3× 5 perc → 15 percenként, csak ha van várakozó adat és csak előtérben); közben minden helyben mentődik (📴 · N vár).
 - **Eszközfelismerés:** minden böngésző saját azonosítót és javasolt nevet kap (pl. „Windows – Chrome”). Ha több gyerek van, az első indításkor megkérdezi: „Ki játszik ezen az eszközön?” (mentés szülői PIN-nel). Egy hozzárendelt gyerek esetén a játék automatikusan vele indul; több esetén a választó csak őket mutatja.
-- **☁️ Szinkron ablak (PIN nélkül):** állapot, eseménynapló, Mentés most, Újrakapcsolódás; a ⚙️ gomb PIN után a Felhő fülre visz.
-- **Billentyűzet a kezdőképernyőn:** Tab / Shift+Tab lép a küldetés gomb és a bolygók között (körbe), Enter elindítja a kijelöltet.
-- **Súgó (F1 vagy ❓):** gyerekeknek szóló leírás a kijelölt bolygóról (mit gyakorol ott, példafeladat, tipp), kijelölés nélkül áttekintés mind a 15 bolygóról; gyakorlás közben az aktuális bolygóról.
-- **Esc gomb:** ha felugró ablak van nyitva, bezárja (mint a Mégse); egyébként bármelyik képernyőről (feladat, magyarázat) a főmenübe visz. Az első játékos nevét nem lehet Esc-kel átugrani.
+- **☁️ Szinkron ablak (PIN nélkül):** a felső sávban csak ikon (online kapcsolatnál 📡); az ablakban állapot, eseménynapló, Mentés most, Újrakapcsolódás; a ⚙️ gomb PIN után a Felhő fülre visz.
+- **Billentyűzet a kezdőképernyőn:** Tab / Shift+Tab lép a küldetés gomb, az Ismétlő kör és a bolygók között (körbe), Enter elindítja a kijelöltet.
+- **Súgó (F1 vagy ❓, a felső sávban csak ikon):** a kezdőképernyőn gyerekeknek szóló leírás a kijelölt bolygóról (mit gyakorol ott, példafeladat, tipp), kijelölés nélkül áttekintés mind a 15 bolygóról; feladat közben a lépésenkénti súgó (lásd fent), ha az ki van kapcsolva, az aktuális bolygó leírása.
+- **Esc gomb:** ha felugró ablak van nyitva, bezárja (mint a Mégse); egyébként bármelyik képernyőről (feladat, magyarázat) a térképre visz. Az első játékos nevét nem lehet Esc-kel átugrani.
 - **Felolvasás** (🔊, alapból kikapcsolva) a böngésző magyar hangjával.
 
 ## Futtatás helyben
@@ -67,6 +69,8 @@ node tests/shell.test.mjs
 node tests/keret.test.mjs
 node tests/cloud.test.mjs
 node tests/firebase-keys.test.mjs
+node tests/helpmask.test.mjs
+node tests/review.test.mjs
 ```
 
 A `cloud.test.mjs` memóriabeli ál-Firebase-szel két eszközt szimulál (részleges feltöltés, összefésülés, régi változatú eszköz, hibanapló-ág, eszköz-hozzárendelés, törlés), a `sync.test.mjs` a mezőnkénti összehasonlítást és a feladatonkénti feltöltés méretét méri. A `core.test.mjs` a fejlődés-adatokat (napi/heti/havi összesítés), a beállítások ellenőrzését és az adat-átállást (schema 2) teszteli. A `generators.test.mjs`:
@@ -77,6 +81,8 @@ Típusonként, altípusonként és szintenként 1000 feladatot generál, és min
 - nincs-e `undefined` vagy `NaN` a szövegben;
 - átmegy-e a helyes válasz az ellenőrzőn.
 
+A `helpmask.test.mjs` azt ellenőrzi, hogy a lépésenkénti súgó egyik altípusnál sem árulja el a választ (szövegben és ábrán sem), a `review.test.mjs` azt, hogy az ismétlő körben minden altípusnál pontosan ugyanaz a feladat jön vissza a magból. A `shell.test.mjs` a service worker fájllistájának teljességét is nézi.
+
 A `node tests/sample.mjs T1` parancs mintafeladatokat ír ki átolvasásra.
 
 ## Felhős mentés
@@ -85,8 +91,8 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 
 ## Új feladattípus hozzáadása
 
-1. Hozz létre egy új fájlt a `js/types/` mappában a meglévők mintájára. Altípusonként kell egy `gen(rng, lvl)` függvény, ami ezeket adja vissza: `q`, `ans`, `hint`, `steps`, `why`.
-2. Vedd fel a típust a `js/types/index.js` fájlba (és a `sw.js` listájába).
+1. Hozz létre egy új fájlt a `js/pack/types/` mappában a meglévők mintájára. Altípusonként kell egy `gen(rng, lvl)` függvény, ami ezeket adja vissza: `q`, `ans`, `hint`, `steps`, `why` (és ha a súgó lépései elárulnák a választ: `help`). A véletlenhez csak a kapott `rng`-t használd (az ismétlő kör a magból állítja elő újra a feladatot).
+2. Vedd fel a típust a `js/pack/types/index.js` fájlba (és a `sw.js` listájába, a `VERSION` növelésével).
 3. Futtasd le a teszteket.
 
 ## Következő ütemek
@@ -98,12 +104,12 @@ Lásd [FIREBASE.md](FIREBASE.md). Beállítás nélkül az app helyi módban mű
 A program váza közös és paraméterezhető; appankként csak a feladatok és a téma térnek el (részletek: `docs/terv-kozos-vaz.md`).
 
 - `js/main.js`: indítás – `startShell({ game: GAME, pack: PACK })`.
-- `js/core/`: játékfüggetlen keret – billentyűk, ablakok, fülek, beállításűrlap, fejlődés-adatok, diagram, részleges szinkron, felhő (`cloud.js`), eszköz és forgalom, tárgyak, események, hóesés, **egységes pontozás** (`scoring.js`), **kétszintű napi cél** (`dailygoal.js`), válaszrögzítés (`answers.js`), jelvénymotor (`badges.js`), ismétlés (`srs.js`), véletlenszám (`rng.js`).
-- `js/shell/`: a közös váz képernyői – kezdőlap, gyakorlókör, ⚙️ ablak fülei, 🎒 Gyűjtemény, ünnepek, játékosok és eszközök, PIN, felhő-UI, súgó, napi nagy cél (serlegeső, ajándékdobozok, szorzós nap).
+- `js/core/`: játékfüggetlen keret – billentyűk, ablakok, fülek, beállításűrlap, fejlődés-adatok, diagram, részleges szinkron, felhő (`cloud.js`) és újrapróbálkozás (`retry.js`), eszköz és forgalom, tárgyak, események, hóesés, **egységes pontozás** (`scoring.js`), **kétszintű napi cél** (`dailygoal.js`), válaszrögzítés (`answers.js`), jelvénymotor (`badges.js`), ismétlés (`srs.js`), lépésenkénti súgó (`stephelp.js`), véletlenszám (`rng.js`).
+- `js/shell/`: a közös váz képernyői – kezdőlap (🩹 Ismétlő kör kártyával), gyakorlókör (súgó, magyarázat, ikerfeladat), ⚙️ ablak fülei, 🎒 Gyűjtemény, ünnepek, játékosok és eszközök, PIN, felhő-UI, súgó, napi nagy cél (serlegeső, ajándékdobozok, szorzós nap).
 - `js/game/`: a Matek Űrkaland paraméterei – téma és szavak (`config.js`), ranglétra, tárgyak, ünnepek, ajándékok, adatátállás, Firebase.
-- `js/pack/`: a matekos feladatcsomag – a 15 feladattípus, válaszadó felületek, bolygók csillagai és szintjei, küldetésterv, bolygósúgó.
+- `js/pack/`: a matekos feladatcsomag – a 15 feladattípus (`types/`), válaszadó felületek, bolygók csillagai és szintjei, küldetésterv, ismétlő kör (`progress.js`), a súgó lépéseinek kitakarása (`helpmask.js`), bolygósúgó.
 - `js/engine.js`: a csomag és a keret összekötője a tesztekhez.
 
 A `tests/shell.test.mjs` azt is ellenőrzi, hogy a `js/core` és a `js/shell` nem hivatkozik matekos fogalomra.
 
-**A közös keret forrása a `keretrendszer` repó** (a `Felvételi_matek` mellett: `../keretrendszer`). A `js/core`, `js/shell`, `css/style.css` és `tests/keret.test.mjs` fájlokat itt nem szerkesztjük: a keret-repóban változtatunk, majd `node tools/keret-masolas.mjs ../Felvételi_matek` másolja át őket. A `KERET_VERZIO` fájl rögzíti a verziót és az ujjlenyomatot; a `node tests/keret.test.mjs` jelzi, ha a másolatot kézzel átírták.
+**A közös keret forrása a `keretrendszer` repó** (a `Felvételi_matek` mellett: `../keretrendszer`). A `js/core`, `js/shell`, `css/style.css` és `tests/keret.test.mjs` fájlokat itt nem szerkesztjük: a keret-repóban változtatunk, majd ott a `node tools/keret-masolas.mjs ../Felvételi_matek` másolja át őket. Az `index.html` nem másolódik: a keret mintájának változásait kézzel kell átvezetni. Új keretfájl esetén a `sw.js` listáját is bővíteni kell. A `KERET_VERZIO` fájl rögzíti a verziót és az ujjlenyomatot; a `node tests/keret.test.mjs` jelzi, ha a másolatot kézzel átírták.

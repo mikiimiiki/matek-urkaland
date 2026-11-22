@@ -1,6 +1,6 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v25";
+const VERSION = "urkaland-v26";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/core/answers.js",
@@ -16,11 +16,13 @@ const SHELL = [
   "js/core/keys.js",
   "js/core/modal.js",
   "js/core/progress.js",
+  "js/core/retry.js",
   "js/core/rng.js",
   "js/core/scoring.js",
   "js/core/settings.js",
   "js/core/snow.js",
   "js/core/srs.js",
+  "js/core/stephelp.js",
   "js/core/syncdiff.js",
   "js/core/tabs.js",
   "js/engine.js",
@@ -34,6 +36,7 @@ const SHELL = [
   "js/main.js",
   "js/pack/answer-ui.js",
   "js/pack/check.js",
+  "js/pack/helpmask.js",
   "js/pack/index.js",
   "js/pack/planet-info.js",
   "js/pack/progress.js",
