@@ -206,7 +206,11 @@ function nextButton(auto = false) {
 }
 function afterEvents(ev) {
   const u = cur(), R = G().ranks;
-  if (ev.pack) { if (ev.pack.confetti) confetti(); toast(ev.pack.text, 4000); }
+  if (ev.pack) {
+    // gyűjtött esemény (pl. új szókártya): nem minden válasznál, hanem a kör végén egyben
+    if (ev.pack.gather) { const g = ev.pack.gather; S.gather = S.gather || {}; S.gather[g.key] = (S.gather[g.key] || 0) + (g.n || 1); }
+    if (ev.pack.text) { if (ev.pack.confetti) confetti(); toast(ev.pack.text, 4000); }
+  }
   ev.badges.forEach(b => toast(`${b.ic} Új jelvény: ${b.n}`, 3500));
   const rb = R.rankIndex(u.pts - ev.pts), ra = R.rankIndex(u.pts);
   if (ra > rb) setTimeout(() => celebrateRank(ra), 1200);
@@ -233,8 +237,17 @@ function celebrate(me) {
     box.append(row);
   });
 }
+// A körben gyűjtött csomagesemények összesítő szövege (PACK.gatherText[kulcs](db)); egyszer adja vissza
+function takeGather() {
+  const g = S && S.gather; if (!g) return "";
+  S.gather = null;
+  const T = C.pack.gatherText || {};
+  return Object.entries(g).map(([k, n]) => (T[k] ? T[k](n) : "")).filter(Boolean).join(" ");
+}
 function endRound() {
   C.cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
+  const gt = takeGather();
+  if (gt) { confetti(); setTimeout(() => toast(gt, 5000), 600); }
   const ok = S.res.filter(r => r === 1).length, all = S.res.length, mode = S.mode, t = C.pack.topics.find(x => x.id === S.topic);
   if (mode === "review") return reviewEnd(ok, all);
   if (mode !== "free") { toast(`Kör vége: ${ok}/${all} elsőre jó. ${G().logo}`); return goHome(); }
@@ -252,7 +265,7 @@ function endRound() {
 }
 export function goHome() {
   if ("speechSynthesis" in window) speechSynthesis.cancel();
-  if (S) clearTimeout(S.autoT);
+  if (S) { clearTimeout(S.autoT); const gt = takeGather(); if (gt) toast(gt, 5000); }   // félbehagyott kör: az addig gyűjtött is látsszon
   S = null; helpBadge(); show("scr-home"); renderTop(); renderHome();
   C.cloud.checkpoint("home"); maybeAskDevice(); checkHolidays();
   const u = cur();

@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.7.0",
-  "commit": "98b6331",
+  "verzio": "1.7.1",
+  "commit": "22619bf",
   "datum": "2026-11-23",
-  "ujjlenyomat": "2897dc79dc08af07ca0db0694b465366f089c970577d801e856bab126be56c99",
+  "ujjlenyomat": "d4a179fc70ecf52f86a1e7d22930075b5f1fd2d73d8c766ef749636ac36429fc",
   "fajlok": [
     "js/core/answers.js",
     "js/core/badges.js",
