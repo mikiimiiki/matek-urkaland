@@ -235,16 +235,10 @@ export function parentTabs(app) {
   // ---------- 💾 Helyi mentés ezen az eszközön ----------
   function localSaveSection(box, ctx) {
     box.append(el("h4", "psub", "💾 Helyi mentés ezen az eszközön"));
-    const on = !!app.localSave, st = on ? app.localSave.status : null;
-    const row = el("label", "set-row");
-    const cb = el("input"); cb.type = "checkbox"; cb.className = "switch"; cb.checked = app.localSaveEnabled();
-    cb.addEventListener("change", () => { app.setLocalSaveEnabled(cb.checked); ctx.redraw(); toast(cb.checked ? "✅ Bekapcsolva – az újratöltés után lép életbe" : "✅ Kikapcsolva – az újratöltés után a régi mentés fut"); });
-    row.append(el("span", "set-label", `Biztonságos helyi mentés (próba)<span class="set-help">Mentés után visszaolvassa és ellenőrzi az adatot, megtartja az előző mentést, hibánál újrapróbál, és egyszerre csak egy lapon enged játszani. A mentés formátuma nem változik.</span>`), el("div", "set-ctl"));
-    row.lastChild.append(cb); box.append(row);
-    const info = on ? (st.lastSaved ? `✅ Működik · utolsó helyi mentés: ${new Date(st.lastSaved).toLocaleTimeString("hu-HU")}` : "✅ Működik · még nem volt mentés ezen a lapon") + (st.phase === "error" ? " · ⚠️ az utolsó mentés nem sikerült, újrapróbálja" : "")
-      : (cb.checked ? "⏳ Bekapcsolva – töltsd újra az oldalt" : "Kikapcsolva – a régi helyi mentés fut");
-    if (!on && cb.checked) box.append(el("p", "small", info), btn("secondary", "🔄 Újratöltés most", () => location.reload()));
-    else box.append(el("p", "small soft", info));
+    const st = app.localSave ? app.localSave.status : null;
+    const info = !st ? "⚠️ A böngésző nem engedi a biztonságos mentést – egyszerű helyi mentés fut."
+      : (st.lastSaved ? `✅ Működik · utolsó helyi mentés: ${new Date(st.lastSaved).toLocaleTimeString("hu-HU")}` : "✅ Működik · még nem volt mentés ezen a lapon") + (st.phase === "error" ? " · ⚠️ az utolsó mentés nem sikerült, újrapróbálja" : "");
+    box.append(el("p", "small soft", info), el("p", "legend", "Mentés után visszaolvassa és ellenőrzi az adatot, megtartja az előző mentést, hibánál újrapróbál, és egyszerre csak egy lapon enged játszani."));
     box.append(btn("secondary", "⬇️ Mentés letöltése (JSON)", () => app.exportState()),
       el("p", "legend", "A letöltött fájlban a család minden adata és a szülői PIN ujjlenyomata is benne van – ne oszd meg, és ne tedd nyilvános helyre."));
   }

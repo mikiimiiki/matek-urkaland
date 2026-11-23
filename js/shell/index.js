@@ -30,8 +30,8 @@ export function startShell({ game, pack }) {
   C.storeKey = isSimulated() ? game.simKey : game.storeKey;
 
   // ---- állapot (helyben mindig mentünk; a felhő opcionális) ----
-  // biztonságos helyi mentés (eszközönként bekapcsolható: ?helyimentes=be) – sérült mentésnél a váz nem indul,
-  // a helyreállító panel jelenik meg; kikapcsolva a régi betöltés fut
+  // biztonságos helyi mentés – sérült mentésnél a váz nem indul, a helyreállító panel jelenik meg;
+  // ha a böngésző nem engedi a tárolást, a régi egyszerű betöltés fut
   let st;
   if (localSaveEnabled(C.storeKey)) {
     const r = initLocalSave(C.storeKey);

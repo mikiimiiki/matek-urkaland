@@ -9,7 +9,7 @@ import { refreshAll, renderTop, renderHome } from "./home.js";
 import { parentTabs } from "./parent-tabs.js";
 import { renderCloudInto } from "./cloud-ui.js";
 import { newUser } from "./user.js";
-import { localSaveEnabled, setLocalSaveEnabled, exportState } from "./local-save-ui.js";
+import { exportState } from "./local-save-ui.js";
 
 // ---------- Új játékos, váltás ----------
 // first: az első játékos (nem zárható be); after: visszahívás mentés után (pl. a Család fül frissítése)
@@ -222,7 +222,6 @@ export const app = {
   fetchLogs: name => C.cloud.fetchLogs(name),
   // helyi mentés (⚙️ Felhő fül)
   get localSave() { return C.localSave; },
-  localSaveEnabled: () => localSaveEnabled(C.storeKey), setLocalSaveEnabled: on => setLocalSaveEnabled(C.storeKey, on),
   exportState: () => exportState(C.state, G().id || "gyakorlo"),
   devicesList, setDeviceKids, renameDevice, removeDevice,
   setTodayMult, setBlocked, streakNow, rewardKinds, rewardProgress,

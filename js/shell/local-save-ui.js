@@ -1,6 +1,6 @@
 // ===== Biztonságos helyi mentés a vázban: kapcsoló, egy aktív lap, hibasáv, sérült mentés, letöltés =====
-// Alapból KIKAPCSOLT (a régi mentés fut). Eszközönként bekapcsolható: ?helyimentes=be (vissza: ?helyimentes=ki),
-// vagy a ⚙️ → Felhő fülön. A mentés formátuma nem változik, így a ki- és bekapcsolás adatvesztés nélkül oda-vissza megy.
+// Mindig ez fut, ha a böngésző engedi a localStorage-t (különben – pl. letiltott tárolásnál – a régi, egyszerű út).
+// A mentés formátuma és kulcsa a régi.
 import { el, btn, escHtml as esc } from "../core/dom.js";
 import { ask } from "../core/modal.js";
 import { createLocalSave, PREV, BAD } from "../core/local-save.js";
@@ -8,15 +8,12 @@ import { createTabLease } from "../core/tab-lease.js";
 import { C } from "./ctx.js";
 import { verifyPin } from "./players.js";
 
-const FLAG = "__helyimentes";
 const ls = () => { try { return globalThis.localStorage; } catch { return null; } };
-// A kapcsoló: az URL-paraméter eszközönként megmarad
+// Elérhető-e a localStorage (a próbaidőszak kapcsolóját is eltakarítja)
 export function localSaveEnabled(storeKey) {
   const s = ls(); if (!s) return false;
-  const p = new URLSearchParams(location.search).get("helyimentes");
-  try { if (p === "be" || p === "ki") s.setItem(storeKey + FLAG, p); return s.getItem(storeKey + FLAG) === "be"; } catch { return false; }
+  try { s.removeItem(storeKey + "__helyimentes"); s.getItem(storeKey); return true; } catch { return false; }
 }
-export function setLocalSaveEnabled(storeKey, on) { try { ls().setItem(storeKey + FLAG, on ? "be" : "ki"); } catch { /* */ } }
 
 // Indítás: { ok, state } – vagy { ok: false } (sérült mentés: a helyreállító panel már látszik, a váz ne induljon)
 export function initLocalSave(storeKey) {
