@@ -17,6 +17,7 @@ import { checkHolidays } from "./holidays.js";
 import { openCloud, renderCloudLive, refreshCloud } from "./cloud-ui.js";
 import { openHelp } from "./help.js";
 import { openGifts, turboGreet, bigInfo } from "./goal-ui.js";
+import { localSaveEnabled, initLocalSave } from "./local-save-ui.js";
 
 export function startShell({ game, pack }) {
   C.game = game; C.pack = pack; C.defs = settingsDefs(game, pack); C.rng = makeRng();
@@ -29,7 +30,14 @@ export function startShell({ game, pack }) {
   C.storeKey = isSimulated() ? game.simKey : game.storeKey;
 
   // ---- állapot (helyben mindig mentünk; a felhő opcionális) ----
-  let st = (() => { try { return JSON.parse(localStorage.getItem(C.storeKey) || "null"); } catch { return null; } })()
+  // biztonságos helyi mentés (eszközönként bekapcsolható: ?helyimentes=be) – sérült mentésnél a váz nem indul,
+  // a helyreállító panel jelenik meg; kikapcsolva a régi betöltés fut
+  let st;
+  if (localSaveEnabled(C.storeKey)) {
+    const r = initLocalSave(C.storeKey);
+    if (!r.ok) return;
+    st = r.state;
+  } else st = (() => { try { return JSON.parse(localStorage.getItem(C.storeKey) || "null"); } catch { return null; } })()
     || { familyCode: "", current: "", users: {}, settings: {}, deleted: {} };
   st.settings = Object.assign({ rewards: [], upd: 0 }, st.settings || {});
   st.deleted = st.deleted || {};

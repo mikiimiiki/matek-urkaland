@@ -1,6 +1,6 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v26";
+const VERSION = "urkaland-v27";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/core/answers.js",
@@ -18,6 +18,9 @@ const SHELL = [
   "js/core/progress.js",
   "js/core/retry.js",
   "js/core/rng.js",
+  "js/shell/local-save-ui.js",
+  "js/core/tab-lease.js",
+  "js/core/local-save.js",
   "js/core/scoring.js",
   "js/core/settings.js",
   "js/core/snow.js",

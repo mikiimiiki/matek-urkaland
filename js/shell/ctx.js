@@ -17,11 +17,17 @@ const CHILD = () => C.defs.filter(d => d.scope === "child");
 export const prefs = u => Object.fromEntries(CHILD().map(d => [d.key, resolve(d, u && u.prefs, C.state.settings.childDefaults)]));
 
 // ---- mentés ----
-export const persist = () => { try { localStorage.setItem(C.storeKey, JSON.stringify(C.state)); } catch (e) { console.warn(e); } };
-export function save() { const u = cur(); if (u) u.upd = Date.now(); persist(); if (u) C.cloud.queue(u.name); }
+// Bekapcsolt biztonságos helyi mentésnél (C.localSave) az ellenőrzött úton ment, különben a régi módon
+export const persist = () => {
+  if (C.localSave) return C.localSave.save(C.state);
+  try { localStorage.setItem(C.storeKey, JSON.stringify(C.state)); return true; } catch (e) { console.warn(e); return false; }
+};
+// egy másik lapra átadott (inaktív) lap semmit nem ment, és a felhőbe sem küld
+const inactive = () => !!(C.localSave && !C.localSave.active);
+export function save() { if (inactive()) return; const u = cur(); if (u) u.upd = Date.now(); persist(); if (u) C.cloud.queue(u.name); }
 // A ⚙️ ablak fülei ezekkel mentenek
-export function saveUser(u) { u.upd = Date.now(); persist(); C.cloud.queue(u.name); if (u === cur()) applyPrefs(); C.refreshAll(); }
-export function saveFamily() { C.state.settings.upd = Date.now(); persist(); C.cloud.pushSettings(); C.refreshAll(); }
+export function saveUser(u) { if (inactive()) return; u.upd = Date.now(); persist(); C.cloud.queue(u.name); if (u === cur()) applyPrefs(); C.refreshAll(); }
+export function saveFamily() { if (inactive()) return; C.state.settings.upd = Date.now(); persist(); C.cloud.pushSettings(); C.refreshAll(); }
 // A gyerek beállításainak alkalmazása (felolvasás, betűtípus)
 export function applyPrefs() {
   const P = prefs(cur());

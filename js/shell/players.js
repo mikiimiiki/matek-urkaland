@@ -9,6 +9,7 @@ import { refreshAll, renderTop, renderHome } from "./home.js";
 import { parentTabs } from "./parent-tabs.js";
 import { renderCloudInto } from "./cloud-ui.js";
 import { newUser } from "./user.js";
+import { localSaveEnabled, setLocalSaveEnabled, exportState } from "./local-save-ui.js";
 
 // ---------- Új játékos, váltás ----------
 // first: az első játékos (nem zárható be); after: visszahívás mentés után (pl. a Család fül frissítése)
@@ -116,6 +117,8 @@ async function hashPin(pin, saltHex) {
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, key, 256);
   return { salt: hex(salt), hash: hex(bits) };
 }
+// PIN ellenőrzése egy adott (pl. a helyreállításnál az előző mentésből vett) szülői ujjlenyomattal
+export async function verifyPin(parent, pin) { return !!(parent && parent.salt && (await hashPin(String(pin), parent.salt)).hash === parent.hash); }
 const PIN_OK = /^\d{4,10}$/; // a régebbi (4–8, illetve 6–10 számjegyes) PIN-ek is érvényesek maradnak
 export async function setNewPin() {
   const a = await ask({ title: "Szülői PIN beállítása", text: "Adj meg egy 4–10 számjegyű PIN-kódot. Ezzel védjük a szülői felületet.", value: "", secret: true });
@@ -217,6 +220,10 @@ export const app = {
   newPlayer: after => newPlayer(false, after),
   renderCloudInto: box => renderCloudInto(box),
   fetchLogs: name => C.cloud.fetchLogs(name),
+  // helyi mentés (⚙️ Felhő fül)
+  get localSave() { return C.localSave; },
+  localSaveEnabled: () => localSaveEnabled(C.storeKey), setLocalSaveEnabled: on => setLocalSaveEnabled(C.storeKey, on),
+  exportState: () => exportState(C.state, G().id || "gyakorlo"),
   devicesList, setDeviceKids, renameDevice, removeDevice,
   setTodayMult, setBlocked, streakNow, rewardKinds, rewardProgress,
   get consoleUrl() { const f = G().firebase; return f && f.projectId ? `https://console.firebase.google.com/project/${f.projectId}/database` : ""; },
