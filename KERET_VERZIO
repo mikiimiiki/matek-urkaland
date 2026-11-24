@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.8.0",
-  "commit": "f905050",
-  "datum": "2026-11-23",
-  "ujjlenyomat": "1c14a8136c6e1f98ed65c4b31f6721f5cab20f522db46fb23b82c325e7490ce0",
+  "verzio": "1.9.0",
+  "commit": "0db7e12",
+  "datum": "2026-11-24",
+  "ujjlenyomat": "9dda336fd3b2e8553cdea5bc92ee36e5dce0ffef2b1e2d4fb91e22c43f9499b9",
   "fajlok": [
     "js/core/answers.js",
     "js/core/badges.js",
@@ -18,6 +18,7 @@
     "js/core/keys.js",
     "js/core/local-save.js",
     "js/core/modal.js",
+    "js/core/pack-contract.js",
     "js/core/progress.js",
     "js/core/retry.js",
     "js/core/rng.js",

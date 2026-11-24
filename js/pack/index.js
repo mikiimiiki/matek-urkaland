@@ -15,6 +15,8 @@ const speechText = html => plain(String(html).replace(/<svg[\s\S]*?<\/svg>/g, " 
   .replace(/·/g, " szorozva ").replace(/ : /g, " osztva ").replace(/−/g, " mínusz ").replace(/→/g, ", ").replace(/≥/g, " nagyobb vagy egyenlő ").replace(/&lt;|</g, " kisebb ");
 
 export const PACK = {
+  contractVersion: 1,
+  version: "1.0.0",
   id: "matek",
   stepHelp: true, // ❓ / F1 feladat közben: a levezetés következő lépése (a végeredményt soha)
   // a kezdőlap témakártyái (itt: bolygók)

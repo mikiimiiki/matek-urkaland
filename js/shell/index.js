@@ -1,3 +1,4 @@
+import { normalizePack } from "../core/pack-contract.js";
 // ===== A közös váz indítása: startShell({ game, pack }) =====
 // Az app saját main.js-e csak ezt hívja. Minden más (képernyők, felhő, eszköz, billentyűk) innen indul.
 import { $, toast } from "../core/dom.js";
@@ -20,6 +21,7 @@ import { openGifts, turboGreet, bigInfo } from "./goal-ui.js";
 import { localSaveEnabled, initLocalSave } from "./local-save-ui.js";
 
 export function startShell({ game, pack }) {
+  pack = normalizePack(pack);
   C.game = game; C.pack = pack; C.defs = settingsDefs(game, pack); C.rng = makeRng();
   C.refreshAll = refreshAll; C.refreshCloud = refreshCloud;
   if (game.bodyClass) document.body.classList.add(game.bodyClass);   // pl. világos téma

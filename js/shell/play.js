@@ -1,3 +1,4 @@
+import { createRecordGate } from "../core/pack-contract.js";
 // ===== Gyakorlókör: feladat → ellenőrzés → tipp → magyarázat → ikerfeladat → továbblépés =====
 // A feladatot a csomag adja (pack.makeTask), a váz végzi a visszajelzést, a pontozást és a rögzítést.
 import { $, el, btn, toast, escHtml as esc } from "../core/dom.js";
@@ -67,11 +68,20 @@ function reviewEnd(ok, all) {
 function nextTask() {
   if (S.idx >= S.plan.length) return endRound();
   const item = S.plan[S.idx];
-  const task = C.pack.makeTask(item, C.rng, cur());
+  let task;
+  try {
+    if (!openTopics(cur()).includes(item.topic)) throw new Error("LOCKED_PLAN_TOPIC");
+    task = C.pack.makeTask(item, C.rng, cur());
+    // a csomag deklarált tartalékága (pl. betűkirakó) a lezárás ellenére is megjelenhet – ez a régi működés
+    const fb = (C.pack.topicFallbacks || {})[item.topic] || [];
+    if (!openTopics(cur()).includes(task.topic) && !fb.includes(task.topic)) throw new Error("LOCKED_TASK_TOPIC");
+  }
+  catch (error) { console.error(error); toast("A feladat nem tölthető be. Az eredményeid megmaradtak."); goHome(); return; }
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
   clearTimeout(S.autoT);
-  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null });
-  renderTask();
+  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
+  try { renderTask(); }
+  catch (error) { console.error(error); toast("A feladat felülete hibás; nem számoltam el eredményt."); goHome(); }
 }
 function renderDots() {
   const d = $("play-dots"); d.innerHTML = "";
@@ -103,7 +113,9 @@ function check() {
   if (S.phase !== "answer") return;
   const t = S.task, v = S.ui.read();
   if (v == null || (Array.isArray(v) && !v.length)) return toast(S.ui.empty || "Adj meg egy választ!");
-  const r = t.check(v);
+  let r;
+  try { r = t.check(v); }
+  catch (error) { console.error(error); toast("Hibás feladatellenőrző; nem számoltam el eredményt."); return; }
   if (r.ok) return correct();
   S.tries++;
   if (S.tries === 1) S.firstWrong = v;
@@ -119,6 +131,7 @@ function check() {
 }
 // Válasz rögzítése: pont (egységes tábla), napi összesítő, csomag-haladás, jelvények, napi cél
 function record(r, v) {
+  S.claimRecord();
   const t = S.task, u = cur(), P = prefs(u);
   S.combo = r === 1 ? (S.combo || 0) + 1 : 0;
   const sc = score({ r, level: t.level, combo: S.combo, twin: S.twin, helps: S.helps || 0 }, G().scoring);
