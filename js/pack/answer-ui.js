@@ -3,23 +3,32 @@
 //   { read() → érték | null, empty (üzenet, ha nincs válasz), auto (a választás maga az ellenőrzés),
 //     markWrong(), markRight(), lock(), showCorrect() }
 // io: { submit() – ellenőrzés kérése (Enter), answering() – még válaszolhat-e, toast(üzenet) }
+import { choiceUI, numberUI } from "../core/answer-ui.js";
 import { el, btn } from "../core/dom.js";
 import { esc } from "./util.js";
 import { parseNum, comboKey } from "./check.js";
 
+const numericInputFilter = value => value.replace(/[^\d\s]/g, "");
+
 export function renderAnswer(A, box, io) {
-  box.innerHTML = "";
+  if (A.kind === "num") return numberUI(box, io, {
+    correct: A.value, unit: A.unit, maxLength: 7, keypad: true, selectOnWrong: false,
+    read: parseNum, filter: numericInputFilter,
+  });
+  if (A.kind === "choice") return choiceUI(box, io, {
+    options: A.options, correct: A.value, getValue: (_, index) => index, shortcuts: false,
+  });
   let activeInput = null;
   const numInput = (cls = "") => {
     const i = el("input", "ans-in " + cls); i.inputMode = "numeric"; i.autocomplete = "off"; i.maxLength = 7;
     i.addEventListener("focus", () => { activeInput = i; });
-    i.addEventListener("input", () => { i.value = i.value.replace(/[^\d\s]/g, ""); i.classList.remove("wrong"); });
+    i.addEventListener("input", () => { i.value = numericInputFilter(i.value); i.classList.remove("wrong"); });
     return i;
   };
   const numpad = () => {
     const p = el("div", "numpad");
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].forEach(d => p.append(btn("", d, () => { if (!activeInput) return; activeInput.value += d; activeInput.classList.remove("wrong"); activeInput.focus(); })));
-    p.append(btn("", "⌫", () => { if (activeInput) { activeInput.value = activeInput.value.slice(0, -1); activeInput.focus(); } }));
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].forEach(d => p.append(btn("", d, () => { if (!io.answering() || !activeInput || activeInput.disabled) return; activeInput.value += d; activeInput.classList.remove("wrong"); activeInput.focus(); })));
+    p.append(btn("", "⌫", () => { if (io.answering() && activeInput && !activeInput.disabled) { activeInput.value = activeInput.value.slice(0, -1); activeInput.focus(); } }));
     return p;
   };
   const enter = e => { if (e) e.preventDefault(); io.submit(); };
@@ -35,15 +44,7 @@ export function renderAnswer(A, box, io) {
   };
   ui.lock = () => { ui.inputs.forEach(i => { i.disabled = true; }); box.querySelectorAll(".opt").forEach(b => { b.disabled = true; }); };
 
-  if (A.kind === "num") {
-    const row = el("div", "ans-row"), i = numInput();
-    row.append(i); if (A.unit) row.append(el("span", "unit", esc(A.unit)));
-    box.append(row, numpad());
-    i.addEventListener("keydown", e => { if (e.key === "Enter") enter(e); });
-    ui.read = () => parseNum(i.value); ui.inputs = [i];
-    ui.showCorrect = () => { i.value = A.value; i.classList.remove("wrong"); i.classList.add("right"); };
-    setTimeout(() => i.focus(), 30);
-  } else if (A.kind === "time") {
+  if (A.kind === "time") {
     const row = el("div", "ans-row"), h = numInput("short"), m = numInput("short");
     h.maxLength = 2; m.maxLength = 2; h.placeholder = "óra"; m.placeholder = "perc";
     row.append(h, el("span", "unit", "óra"), m, el("span", "unit", "perc"));
@@ -53,14 +54,7 @@ export function renderAnswer(A, box, io) {
     ui.read = () => { const hh = parseNum(h.value), mm = m.value.trim() === "" ? 0 : parseNum(m.value); return hh == null || mm == null || mm > 59 || hh > 24 ? null : hh * 60 + mm; };
     ui.inputs = [h, m]; ui.empty = "Írd be az órát és a percet!";
     ui.showCorrect = () => { h.value = Math.floor(A.value / 60); m.value = String(A.value % 60).padStart(2, "0"); [h, m].forEach(i => { i.classList.remove("wrong"); i.classList.add("right"); }); };
-    setTimeout(() => h.focus(), 30);
-  } else if (A.kind === "choice") {
-    const o = el("div", "opts");
-    let picked = null;
-    A.options.forEach((txt, k) => o.append(btn("opt", esc(txt), e => { if (!io.answering() || e.currentTarget.disabled) return; picked = k; ui.clicked = e.currentTarget; io.submit(); })));
-    box.append(o);
-    ui.read = () => picked; ui.auto = true; ui.empty = "Válassz egyet!";
-    ui.showCorrect = () => { const want = [].concat(A.value); box.querySelectorAll(".opt").forEach((b, k) => { b.classList.remove("sel"); if (want.includes(k)) b.classList.add("right"); }); };
+    io.focus?.(h);
   } else if (A.kind === "pick") {
     const o = el("div", "opts"); let sel = [];
     A.options.forEach((txt, k) => { const b = btn("opt", esc(txt), () => { if (!io.answering()) return; b.classList.toggle("sel"); sel = b.classList.contains("sel") ? [...sel, k] : sel.filter(x => x !== k); }); o.append(b); });
@@ -78,7 +72,7 @@ export function renderAnswer(A, box, io) {
     ui.read = () => { if (i.value.trim()) add(); return set.length ? set.slice() : null; };
     ui.inputs = [i];
     ui.showCorrect = () => { i.value = ""; i.classList.remove("wrong"); i.classList.add("right"); chips.innerHTML = A.value.map(v => `<span class="chip" style="background:var(--okbg);color:var(--ok)">${v}</span>`).join(""); };
-    setTimeout(() => i.focus(), 30);
+    io.focus?.(i);
   } else if (A.kind === "combos") renderCombos(A, box, io, ui);
   return ui;
 }
@@ -136,5 +130,5 @@ function renderCombos(A, box, io, ui) {
   ui.read = () => (list.length ? list.map(x => x.slice()) : null);
   ui.empty = "Írj fel legalább egy lehetőséget a listára!";
   ui.showCorrect = () => { optRow.innerHTML = ""; addBtn.disabled = true; back.disabled = true; chips.innerHTML = A.value.map(v => `<span class="chip" style="background:var(--okbg);color:var(--ok)">${v.split("-").map(k => dot(k) + esc(k)).join(" ")}</span>`).join(""); };
-  setTimeout(() => wrap.focus(), 30);
+  io.focus?.(wrap);
 }

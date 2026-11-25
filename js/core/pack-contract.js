@@ -1,5 +1,6 @@
 // ===== Tananyagcsatlakozó: kis PACK-szerződés, alapértékek és átmeneti adapter a régi csomagokhoz =====
 // Mentést és pontozást nem végez; részletek: docs/tananyagcsatlakozo.md
+import { answerSpecProblem, specSolution, renderAnswerSpec } from './answer-spec.js';
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const fail = (id, field, reason) => { throw new Error(`[PACK ${id || '?'}] ${field}: ${reason}`); };
 const text = (value, fallback = '') => value == null ? fallback : String(value);
@@ -14,35 +15,53 @@ function array(value, id, field) {
   if (!Array.isArray(value)) fail(id, field, 'tömb szükséges');
   return value;
 }
-export function normalizeTask(raw, item, pack) {
+// Alapértelmezett összevetés: szövegnél Unicode-egységesítés, a szélső szóközök levágása, a belső szóközök összevonása
+const defaultNormalize = v => typeof v === 'string' ? v.normalize('NFC').trim().replace(/\s+/g,' ') : v;
+const sameValue = (a, b) => a === b || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x,i) => sameValue(x,b[i])));
+// A felület vezérlőjéből csak a read() kötelező; a többi hiányozhat, és a hibájuk nem állítja meg a kört
+export const UI_OPTIONAL = ['markWrong','markRight','lock','showCorrect','dispose'];
+export function normalizeTask(raw, item, pack, rng) {
   const id = pack.id;
   if (!object(raw)) fail(id, 'makeTask', 'szinkron feladatobjektum szükséges');
   const topic = raw.topic ?? item.topic;
   if (!pack.topics.some(t => t.id === topic) || (!pack.legacy && topic !== item.topic && !(pack.topicFallbacks?.[item.topic] || []).includes(topic))) fail(id, 'task.topic', 'ismeretlen vagy eltérő téma');
-  for (const field of ['q', 'correctText']) if (typeof raw[field] !== 'string') fail(id, `task.${field}`, 'szöveg szükséges');
-  for (const field of ['render', 'check']) if (typeof raw[field] !== 'function') fail(id, `task.${field}`, 'függvény szükséges');
-  const t = {...raw, topic, sub:raw.sub ?? item.sub ?? '', level:raw.level ?? 1,
+  const spec = raw.answer;
+  if (spec !== undefined) { const problem = answerSpecProblem(spec); if (problem) fail(id, 'task.answer', problem); }
+  if (raw.render === undefined && spec === undefined) fail(id, 'task.render', 'függvény vagy answer-leírás szükséges');
+  if (raw.render !== undefined && typeof raw.render !== 'function') fail(id, 'task.render', 'függvény szükséges');
+  const solution = raw.solution !== undefined ? raw.solution : spec ? specSolution(spec) : undefined;
+  if (raw.check === undefined && solution === undefined) fail(id, 'task.check', 'függvény vagy solution szükséges');
+  if (raw.check !== undefined && typeof raw.check !== 'function') fail(id, 'task.check', 'függvény szükséges');
+  const correctText = raw.correctText ?? (solution !== undefined ? text([].concat(solution)[0]) : undefined);
+  if (typeof raw.q !== 'string') fail(id, 'task.q', 'szöveg szükséges');
+  if (typeof correctText !== 'string') fail(id, 'task.correctText', 'szöveg szükséges (vagy solution)');
+  if (raw.speechLang !== undefined && (typeof raw.speechLang !== 'string' || !/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(raw.speechLang))) fail(id, 'task.speechLang', 'nyelvkód szükséges, pl. "de-DE"');
+  const normalize = fn(raw.normalize, id, 'task.normalize', pack.normalizeAnswer || defaultNormalize);
+  const userCheck = raw.check || (v => ({ok:[].concat(solution).some(s => sameValue(normalize(s), normalize(v)))}));
+  const t = {...raw, topic, correctText, solution, sub:raw.sub ?? item.sub ?? '', level:raw.level ?? 1,
     meta:raw.meta ?? pack.topicLabel(topic), viz:raw.viz ?? '',
-    hint:raw.hint ?? 'Gondold át még egyszer!', steps:raw.steps ?? [escape(raw.correctText)],
+    hint:raw.hint ?? 'Gondold át még egyszer!', steps:raw.steps ?? [escape(correctText)],
     why:fn(raw.why,id,'task.why',() => ''), answerText:fn(raw.answerText,id,'task.answerText',v => text(v))};
   if (!Number.isInteger(t.level) || t.level < 1) fail(id,'task.level','pozitív egész szükséges');
   if (!Array.isArray(t.steps) || !t.steps.length || t.steps.some(s => typeof s !== 'string')) fail(id,'task.steps','nem üres szövegtömb szükséges');
   t.check = value => {
-    const result = raw.check.call(t, value);
+    const result = userCheck.call(t, value);
     if (!object(result) || typeof result.ok !== 'boolean') fail(id,'task.check','{ ok: boolean, feedback?: string } szükséges');
     if (result.feedback !== undefined && typeof result.feedback !== 'string') fail(id,'task.check.feedback','szöveg szükséges');
     return result;
   };
   t.render = (box, io) => {
-    const ui = raw.render.call(t, box, io);
+    const ui = raw.render ? raw.render.call(t, box, io) : renderAnswerSpec(box, io, spec, rng);
     if (!object(ui) || typeof ui.read !== 'function') fail(id,'task.render','read() metódusú felület szükséges');
     const out = Object.create(ui);
-    for (const name of ['markWrong','markRight','lock','showCorrect']) {
-      if (typeof ui[name] !== 'function') fail(id,`ui.${name}`,'függvény szükséges');
-      out[name] = (...args) => ui[name].apply(ui,args);
-    }
+    // az elhagyható metódusok hiánya vagy hibája csak a konzolra kerül: a kör, a pont és a mentés nem sérül
+    const safe = (name, fallback) => (...args) => {
+      if (typeof ui[name] !== 'function') return fallback;
+      try { return ui[name].apply(ui,args); } catch (error) { console.error(`[PACK ${id}] ui.${name}:`, error); return fallback; }
+    };
+    for (const name of UI_OPTIONAL) out[name] = safe(name);
+    out.onKey = safe('onKey', false);
     out.read = () => ui.read.call(ui);
-    out.onKey = (...args) => fn(ui.onKey,id,'ui.onKey',() => false).apply(ui,args);
     return out;
   };
   return t;
@@ -67,6 +86,7 @@ export function normalizePack(raw) {
       if (!seen.has(from) || !Array.isArray(to) || to.some(key => !seen.has(key))) fail(id,'topicFallbacks','csak ismert témák adhatók meg');
   }
   if (typeof raw.makeTask !== 'function') fail(id,'makeTask','függvény szükséges');
+  fn(raw.normalizeAnswer,id,'normalizeAnswer');
   const p = {...raw, id, contractVersion:1, version:raw.version ?? 'legacy', legacy,
     topics, levels:raw.levels ?? {count:1,mode:'manual'},
     settings:array(raw.settings,id,'settings'), badges:array(raw.badges,id,'badges'),
@@ -110,7 +130,7 @@ export function normalizePack(raw) {
   }
   p.makeTask=(item,rng,u) => {
     if (!object(item) || !seen.has(item.topic)) fail(id,'makeTask.item','ismert téma szükséges');
-    return normalizeTask(raw.makeTask.call(p,item,rng,u),item,p);
+    return normalizeTask(raw.makeTask.call(p,item,rng,u),item,p,rng);
   };
   return p;
 }

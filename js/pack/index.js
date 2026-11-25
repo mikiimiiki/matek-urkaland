@@ -54,6 +54,8 @@ export const PACK = {
     const A = t.ans, multi = A.kind === "numset" || A.kind === "pick" || A.kind === "combos";
     return {
       topic: T.id, sub, level, seed, raw: t,
+      // a helyes válasz a felület kimenetének alakjában (a keret tananyag-ellenőrzője ezzel próbálja ki a check-et)
+      solution: A.kind === "combos" ? A.value.map(k => k.split("-")) : A.value,
       meta: `${T.planet.emoji} ${T.name} · ${S.name} · ${level}. szint`,
       q: t.q, viz: t.viz || "",
       render: (box, io) => renderAnswer(A, box, io),

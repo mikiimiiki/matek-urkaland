@@ -1,3 +1,4 @@
+import { isCompositionKey } from "../core/answer-ui.js";
 import { createRecordGate } from "../core/pack-contract.js";
 // ===== Gyakorlókör: feladat → ellenőrzés → tipp → magyarázat → ikerfeladat → továbblépés =====
 // A feladatot a csomag adja (pack.makeTask), a váz végzi a visszajelzést, a pontozást és a rögzítést.
@@ -20,11 +21,20 @@ let S = null; // aktuális kör
 // „Vissza a főmenüre / térképre / bázisra”: a -ra/-re az utolsó nem i/í magánhangzó szerint (az i, í semleges)
 const backHome = () => { const w = G().homeWord, v = (w.match(/[aáeéoóöőuúüű]/gi) || ["e"]).pop(); return `Vissza a ${w}${/[aáoóuú]/i.test(v) ? "ra" : "re"}`; };
 export const round = () => S;
+function disposeAnswer() {
+  if (!S) return;
+  S.answerLife?.abort(); S.answerLife = null;
+  S.ui?.dispose?.(); S.ui = null;
+  clearTimeout(S.autoT);
+  $("answer").replaceChildren();
+  $("task-actions").replaceChildren();
+}
 
 export function startMission() {
   const u = cur(), P = prefs(u), mp = missionProgress(u, P);
   // a küldetés aznap összesen goalTasks feladat (a már megoldottak beszámítanak); utána a plusz kör is ennyi feladat
   const n = mp.done ? P.goalTasks : Math.max(1, P.goalTasks - mp.n);
+  disposeAnswer();
   S = { mode: "mission", plan: C.pack.plan(u, n, C.rng, openTopics(u)), idx: 0, res: [], combo: 0 };
   show("scr-play"); $("play-title").textContent = mp.done ? G().texts.plus : G().texts.mission;
   nextTask();
@@ -32,6 +42,7 @@ export function startMission() {
 // Szabad gyakorlás: egy témából rögzített hosszú kör (a szülő állítja: 3, 5 vagy 10 feladat)
 export function startFree(topicId) {
   const n = freeSize(), t = C.pack.topics.find(x => x.id === topicId);
+  disposeAnswer();
   S = { mode: "free", topic: topicId, plan: Array.from({ length: n }, () => ({ topic: topicId, sub: null })), idx: 0, res: [], combo: 0 };
   show("scr-play"); $("play-title").textContent = `${t.icon} ${t.place || t.name} – ${n} feladat`;
   nextTask();
@@ -44,6 +55,7 @@ export function startReview() {
   if (!n) return toast("Nincs mit ismételni – ügyes vagy! 🎉");
   const plan = R.plan(u, n, C.rng, openTopics(u));
   if (!plan.length) return toast("🔒 Az ismétlendő feladatok most le vannak zárva.");
+  disposeAnswer();
   S = { mode: "review", plan, idx: 0, res: [], combo: 0 };
   show("scr-play"); $("play-title").textContent = `🩹 Ismétlő kör – ${plan.length} feladat`;
   nextTask();
@@ -66,6 +78,7 @@ function reviewEnd(ok, all) {
   }, { esc: close => { close(); goHome(); } });
 }
 function nextTask() {
+  disposeAnswer();
   if (S.idx >= S.plan.length) return endRound();
   const item = S.plan[S.idx];
   let task;
@@ -78,7 +91,6 @@ function nextTask() {
   }
   catch (error) { console.error(error); toast("A feladat nem tölthető be. Az eredményeid megmaradtak."); goHome(); return; }
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
-  clearTimeout(S.autoT);
   Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
   try { renderTask(); }
   catch (error) { console.error(error); toast("A feladat felülete hibás; nem számoltam el eredményt."); goHome(); }
@@ -97,21 +109,39 @@ function renderTask() {
   $("task-viz").innerHTML = t.viz || "";
   $("side-body").innerHTML = `<div class="side-empty"><div class="big-emoji">${S.twin ? "🔁" : T.sideIcon}</div><p>${S.twin ? "Most egy hasonló feladat jön – próbáld ki, amit az előbb láttál!" : "Olvasd el figyelmesen a feladatot!<br>Ha elakadsz, a hiba után itt kapsz segítséget."}</p></div>`;
   // io: a feladat ezen keresztül kér ellenőrzést, jelzi a segítséget (pontlevonás), és üzen
-  $("answer").innerHTML = "";   // az előző feladat felülete ne maradjon ott
-  S.ui = t.render($("answer"), { submit: () => onEnter(), answering: () => !!S && S.phase === "answer", toast, useHelp: () => { S.helps = (S.helps || 0) + 1; } });
-  setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", check)]);
+  const scope = S.answerLife = new AbortController(), active = () => S?.answerLife === scope && !scope.signal.aborted;
+  const answering = () => active() && S.phase === "answer" && !isModalOpen();
+  // Enter / io.submit: válasz közben ellenőrzés, utána Tovább (mint korábban) – de csak a saját, még aktív feladaton
+  const submit = () => {
+    if (!active() || isModalOpen()) return;
+    if (S.phase === "answer") check();
+    else if (S.onNext && Date.now() >= (S.lockUntil || 0)) S.onNext();
+  };
+  const canFocus = () => answering() && document.activeElement === focusAtRender;
+  const focusAtRender = document.activeElement;
+  S.ui = t.render($("answer"), {
+    submit, answering, canFocus, signal: scope.signal,
+    focus: node => {
+      const id = setTimeout(() => { if (canFocus() && node.isConnected) node.focus(); }, 30);
+      scope.signal.addEventListener("abort", () => clearTimeout(id), { once: true });
+    },
+    toast: (...args) => { if (active()) toast(...args); },
+    useHelp: () => { if (answering()) S.helps = (S.helps || 0) + 1; },
+  });
+  setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", submit)]);
   if (stepHelpOn()) S.helpCap = shCap(helpList(t).length + 1, shState(cur(), t.topic));
   helpBadge();
-  if (C.tts) speak(t.speech || t.q);
+  if (C.tts) speak(t.speech || t.q, t.speechLang);
 }
 function setActions(bs) { const a = $("task-actions"); a.innerHTML = ""; bs.forEach(b => a.append(b)); }
-// Enter: válasz közben ellenőrzés, utána Tovább
-function onEnter() { if (!S) return; if (S.phase === "answer") check(); else if (S.onNext && Date.now() >= (S.lockUntil || 0)) S.onNext(); }
 
 // --- Ellenőrzés és visszajelzés ---
 function check() {
-  if (S.phase !== "answer") return;
-  const t = S.task, v = S.ui.read();
+  if (!S?.ui || S.phase !== "answer" || isModalOpen()) return;
+  const t = S.task;
+  let v;
+  try { v = S.ui.read(); }
+  catch (error) { console.error(error); toast("A feladat felülete hibás; nem számoltam el eredményt."); goHome(); return; }
   if (v == null || (Array.isArray(v) && !v.length)) return toast(S.ui.empty || "Adj meg egy választ!");
   let r;
   try { r = t.check(v); }
@@ -278,7 +308,7 @@ function endRound() {
 }
 export function goHome() {
   if ("speechSynthesis" in window) speechSynthesis.cancel();
-  if (S) { clearTimeout(S.autoT); const gt = takeGather(); if (gt) toast(gt, 5000); }   // félbehagyott kör: az addig gyűjtött is látsszon
+  if (S) { disposeAnswer(); const gt = takeGather(); if (gt) toast(gt, 5000); }   // félbehagyott kör: az addig gyűjtött is látsszon
   S = null; helpBadge(); show("scr-home"); renderTop(); renderHome();
   C.cloud.checkpoint("home"); maybeAskDevice(); checkHolidays();
   const u = cur();
@@ -295,8 +325,8 @@ export const homeKeys = {
 // Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a téma súgója
 export const playKeys = {
   id: "play",
-  onEnter: a => {
-    if (!S || (a && a.tagName === "BUTTON")) return false;
+  onEnter: (a, e) => {
+    if (isCompositionKey(e) || !S || (a && a.tagName === "BUTTON")) return false;
     if (S.phase !== "answer" && S.onNext && Date.now() >= (S.lockUntil || 0)) { S.onNext(); return true; }
     // válasz közben: ellenőrzés (a beviteli mezők és a saját Enter-kezelők ezt előbb elkapják)
     if (S.phase === "answer" && !(S.ui && S.ui.auto) && !(a && /^(INPUT|TEXTAREA)$/.test(a.tagName))) { check(); return true; }
@@ -305,7 +335,7 @@ export const playKeys = {
   onEsc: () => goHome(),
   onF1: () => openHelp(),
   // minden más billentyű a feladat felületéé (pl. betűgépelés a betűkirakón, 1–4 a választós gomboknál)
-  onKey: e => !!(S && S.ui && S.ui.onKey && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "") && S.ui.onKey(e)),
+  onKey: e => !!(!e.defaultPrevented && !isCompositionKey(e) && S && S.phase === "answer" && S.ui && S.ui.onKey && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "") && S.ui.onKey(e)),
 };
 // ---------- ✍️ A helyes alak beírása (hibás válasz és magyarázat után) ----------
 // mode: "must" (kötelező) | "skip" (kihagyható). Középen nyílik; a továbblépő gomb(ok) csak a helyes beírás után aktívak.

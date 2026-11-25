@@ -75,10 +75,11 @@ export function confetti() {
 }
 
 // ---- felolvasás ----
-export function speak(html) {
+// lang: a feladat saját nyelve (pl. "de-DE"); alapból a játék nyelve
+export function speak(html, lang) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
-  const lang = G().speechLang || "hu-HU";
+  lang = lang || G().speechLang || "hu-HU";
   const u = new SpeechSynthesisUtterance((C.pack.speechText || (x => String(x).replace(/<[^>]+>/g, " ")))(html));
   u.lang = lang; u.rate = 0.95;
   const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(lang.slice(0, 2))); if (v) u.voice = v;
