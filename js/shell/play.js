@@ -1,5 +1,6 @@
 import { learningKey, noteLearning, IMPROVED_TITLE, IMPROVED_TEXT } from "../core/learning-feedback.js";
 import { dayNum } from "../core/dates.js";
+import { roomIcons } from "./room-ui.js";
 import { isCompositionKey } from "../core/answer-ui.js";
 import { createRecordGate, taskKey } from "../core/pack-contract.js";
 // ===== Gyakorlókör: feladat → ellenőrzés → tipp → magyarázat → ikerfeladat → továbblépés =====
@@ -144,7 +145,9 @@ function renderTask() {
   $("task-meta").textContent = t.meta + (S.twin ? " · 🔁 ikerfeladat" : "");
   $("task-q").innerHTML = t.q;
   $("task-viz").innerHTML = t.viz || "";
-  $("side-body").innerHTML = `<div class="side-empty"><div class="big-emoji">${S.twin ? "🔁" : T.sideIcon}</div><p>${S.twin ? "Most egy hasonló feladat jön – próbáld ki, amit az előbb láttál!" : "Olvasd el figyelmesen a feladatot!<br>Ha elakadsz, a hiba után itt kapsz segítséget."}</p></div>`;
+  // a jobb oldali mezőben a Saját sarok figurái váltakoznak (ha van kitett tárgy), különben a játék kabalája
+  const figs = roomIcons(cur()), fig = figs.length ? figs[(S.figN = (S.figN ?? -1) + 1) % figs.length] : T.sideIcon;
+  $("side-body").innerHTML = `<div class="side-empty"><div class="big-emoji">${S.twin ? "🔁" : fig}</div><p>${S.twin ? "Most egy hasonló feladat jön – próbáld ki, amit az előbb láttál!" : "Olvasd el figyelmesen a feladatot!<br>Ha elakadsz, a hiba után itt kapsz segítséget."}</p></div>`;
   // io: a feladat ezen keresztül kér ellenőrzést, jelzi a segítséget (pontlevonás), és üzen
   const scope = S.answerLife = new AbortController(), active = () => S?.answerLife === scope && !scope.signal.aborted;
   const answering = () => active() && S.phase === "answer" && !isModalOpen();
@@ -368,7 +371,7 @@ export function goHome() {
 // Kezdőlap: Tab / Shift+Tab a küldetés gomb, a nyitható adventi ablak, a rangsáv és a témák között; F1 súgó
 export const homeKeys = {
   id: "home",
-  items: () => [...document.querySelectorAll("#home-offers button"), $("btn-mission"), ...document.querySelectorAll("#home-room button"), ...document.querySelectorAll("#advent .aw-today, #advent .aw-makeup"), $("rankbox"), ...document.querySelectorAll("#map button.tcard")],
+  items: () => [...document.querySelectorAll("#btn-mission, #home-offers button, #hero-corner button, #hero-ped button"), ...document.querySelectorAll("#advent .aw-today, #advent .aw-makeup"), $("rankbox"), ...document.querySelectorAll("#map button.tcard")],
   onF1: () => openHelp(),
 };
 // Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a téma súgója

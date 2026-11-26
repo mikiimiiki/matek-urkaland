@@ -1,4 +1,6 @@
-// ===== 🏠 Saját sarkom: a kinyitott tárgyak közül hármat kitehet a gyerek (Gyűjtemény-fül + kis sor a kezdőlapon) =====
+// ===== 🏠 Saját sarkom: a kinyitott tárgyak közül hármat kitehet a gyerek =====
+// Látszik: a kezdőlap tetején a kabala körül, és játék közben a jobb oldali mezőben (feladatonként váltakozva).
+// Díszíteni a Gyűjtemény „Saját sarkom” fülén lehet.
 // Csak az elrendezés mentődik (u.room: 3 tárgyazonosító, üres hely = ""); a gyűjtemény és a felszerelés nem változik.
 // Koppintás: tárgy → hely (vagy hely → tárgy); a ✕ leveszi a tárgyat. Billentyűzettel: Tab + Enter.
 import { $, el, btn, escHtml as esc } from "../core/dom.js";
@@ -12,17 +14,40 @@ function roomItems(u) {
 }
 const canEdit = () => !(C.localSave && !C.localSave.active);
 
-// Kezdőlap: egy kis sor a kitett tárgyakkal; koppintásra a Gyűjtemény „Saját sarkom” füle nyílik
+const openRoom = async () => { const { openCollection } = await import("./collection.js"); openCollection("room"); };
+// A kitett figurák ikonjai (a játék közbeni jobb oldali mezőhöz); üres, ha nincs kitett tárgy
+export function roomIcons(u) {
+  if (!u) return [];
+  const items = roomItems(u);
+  return roomLayout(u.room, id => items.has(id)).filter(Boolean).map(id => itemIcon(id) || "◇");
+}
+// Kezdőlap teteje: bal polc – kabala – jobb polc, a középső talapzat a kabala alatt. Koppintásra a díszítő fül nyílik.
 export function renderRoomRow(u) {
-  const box = $("home-room"); if (!box) return;
+  const old = $("home-room"); if (old) { old.hidden = true; old.replaceChildren(); }   // a régi kis sor helyett
+  const mascot = $("mascot"); if (!mascot) return;
+  let corner = $("hero-corner");
+  if (!corner) {
+    corner = el("div", "hero-corner"); corner.id = "hero-corner";
+    mascot.before(corner); corner.append(el("span", "hc-slot hc-left"), mascot, el("span", "hc-slot hc-right"));
+    const ped = el("div", "hc-ped"); ped.id = "hero-ped"; corner.after(ped);
+  }
   const items = roomItems(u), layout = roomLayout(u.room, id => items.has(id));
-  if (!items.size && !layout.some(Boolean)) { box.hidden = true; box.replaceChildren(); return; }
-  const shown = layout.map(id => (id ? itemIcon(id) || "◇" : "·")).join(" ");
-  const b = btn("room-row", `🏠 Saját sarkom: <span class="room-row-items">${shown}</span> <span class="offer-sub">Díszítés ›</span>`, async () => {
-    const { openCollection } = await import("./collection.js"); openCollection("room");
-  });
-  b.title = "Saját sarkom – díszítés a Gyűjteményben";
-  box.hidden = false; box.replaceChildren(b);
+  const fig = (i, cls) => {
+    const id = layout[i], it = id && items.get(id);
+    if (!it) return el("span", "hc-slot " + cls);
+    const b = btn("hc-fig " + cls, ""); b.textContent = itemIcon(id) || "◇";
+    b.title = `${it.label} (${ROOM_SLOTS[i]}) – Saját sarkom díszítése`; b.setAttribute("aria-label", b.title);
+    b.addEventListener("click", openRoom);
+    return b;
+  };
+  corner.children[0].replaceWith(fig(0, "hc-left"));
+  corner.children[2].replaceWith(fig(2, "hc-right"));
+  const ped = $("hero-ped");
+  if (layout[1]) ped.replaceChildren(fig(1, "hc-mid"));
+  else if (!layout.some(Boolean) && items.size) {
+    const hint = btn("hc-hint", "＋ Díszítsd a sarkodat!", openRoom); hint.title = "Saját sarkom – tegyél ki 3 tárgyat a gyűjteményedből";
+    ped.replaceChildren(hint);
+  } else ped.replaceChildren();
 }
 
 let sel = { item: null, slot: null };

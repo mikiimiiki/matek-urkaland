@@ -1,6 +1,6 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v33";
+const VERSION = "urkaland-v34";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/core/pack-contract.js",

@@ -102,6 +102,9 @@ export function renderHome() {
       if (w) items.push(btn("secondary offer offer-weak", `🎯 Gyakorold ezt: ${esc(w.t.place || w.t.name)} <span class="offer-sub">az utóbbi 2 hétben ${w.pct}% ment elsőre · ${freeSize()} feladat</span>`, () => startFree(w.t.id)));
     }
     offers.replaceChildren(...(items.length ? [el("h3", null, "Neked ajánljuk"), ...items] : []));
+    // a mai küldetés az első; az ajánlat csak a teljesített küldetés után kerül fölé
+    const mission = $("mission");
+    if (mission) { if (mp.done) mission.before(offers); else mission.after(offers); }
     offers.hidden = !items.length;
   }
   renderRoomRow(u);
