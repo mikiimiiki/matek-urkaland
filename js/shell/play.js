@@ -1,5 +1,5 @@
 import { isCompositionKey } from "../core/answer-ui.js";
-import { createRecordGate } from "../core/pack-contract.js";
+import { createRecordGate, taskKey } from "../core/pack-contract.js";
 // ===== Gyakorlókör: feladat → ellenőrzés → tipp → magyarázat → ikerfeladat → továbblépés =====
 // A feladatot a csomag adja (pack.makeTask), a váz végzi a visszajelzést, a pontozást és a rögzítést.
 import { $, el, btn, toast, escHtml as esc } from "../core/dom.js";
@@ -85,13 +85,18 @@ function nextTask() {
   try {
     if (!openTopics(cur()).includes(item.topic)) throw new Error("LOCKED_PLAN_TOPIC");
     task = C.pack.makeTask(item, C.rng, cur());
+    // biztosíték: ha az ikerfeladat mégis ugyanaz lenne, mint az elrontott, a témából kérünk egy másikat
+    if (item.twin && item.origin) {
+      for (let k = 0; k < 5 && taskKey(task) === item.origin; k++) task = C.pack.makeTask({ topic: item.topic, sub: null, level: item.level }, C.rng, cur());
+      if (taskKey(task) === item.origin) console.warn(`[PACK ${C.pack.id}] az ikerfeladat ugyanaz, mint az eredeti (${item.topic})`);
+    }
     // a csomag deklarált tartalékága (pl. betűkirakó) a lezárás ellenére is megjelenhet – ez a régi működés
     const fb = (C.pack.topicFallbacks || {})[item.topic] || [];
     if (!openTopics(cur()).includes(task.topic) && !fb.includes(task.topic)) throw new Error("LOCKED_TASK_TOPIC");
   }
   catch (error) { console.error(error); toast("A feladat nem tölthető be. Az eredményeid megmaradtak."); goHome(); return; }
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
-  Object.assign(S, { task, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
+  Object.assign(S, { task, item, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
   try { renderTask(); }
   catch (error) { console.error(error); toast("A feladat felülete hibás; nem számoltam el eredményt."); goHome(); }
 }
@@ -214,7 +219,10 @@ function explain(v) {
       S.ui.showCorrect();
       // Ikerfeladat: az első hiba után EGY hasonló feladat kötelező. Ha már az ikerfeladat sem sikerült,
       // a gyerek választhat: továbbléphet, vagy még gyakorol egy hasonlóval (nem ragad bele végtelen körbe).
-      const twin = () => { S.plan.splice(S.idx, 0, { topic: t.topic, sub: t.sub, level: t.level, twin: true }); nextTask(); };
+      const twin = () => {
+        let it; try { it = C.pack.twin(t, S.item, C.rng, cur()); } catch (error) { console.error(error); it = { topic: S.item.topic, sub: null, level: t.level, twin: true }; }
+        S.plan.splice(S.idx, 0, { ...it, origin: taskKey(t) }); nextTask();
+      };
       const next = () => nextTask();
       let acts;
       if (!S.twin) acts = [{ label: "🔁 Próbáld ki egy hasonlóval!", fn: twin, primary: true }];

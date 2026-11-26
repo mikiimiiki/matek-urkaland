@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.10.0",
-  "commit": "ac52dec",
-  "datum": "2026-11-25",
-  "ujjlenyomat": "9e5bb82400151cf52d9633a11c782f7fbebbe982a5f06320367da14690e60c16",
+  "verzio": "1.10.1",
+  "commit": "a8c8b03",
+  "datum": "2026-11-26",
+  "ujjlenyomat": "d36f71bcfa5afec7843fe0d0a4c7f4aa3d1ba27dfbf27dc9df67ded6cc6099e9",
   "fajlok": [
     "js/core/answer-spec.js",
     "js/core/answer-ui.js",

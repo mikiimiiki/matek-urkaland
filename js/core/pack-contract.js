@@ -19,6 +19,8 @@ function array(value, id, field) {
 const defaultNormalize = v => typeof v === 'string' ? v.normalize('NFC').trim().replace(/\s+/g,' ') : v;
 const sameValue = (a, b) => a === b || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x,i) => sameValue(x,b[i])));
 // A felület vezérlőjéből csak a read() kötelező; a többi hiányozhat, és a hibájuk nem állítja meg a kört
+// Két feladat „ugyanaz-e” a gyerek szemével: azonos kérdésszöveg és helyes válasz (az ikerfeladat ne ismételje az elrontottat)
+export const taskKey = t => `${text(t.q).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()}|${text(t.correctText)}`;
 export const UI_OPTIONAL = ['markWrong','markRight','lock','showCorrect','dispose'];
 export function normalizeTask(raw, item, pack, rng) {
   const id = pack.id;
@@ -122,6 +124,16 @@ export function normalizePack(raw) {
     if (allowed != null && !Array.isArray(allowed)) fail(id,'plan.allowed','tömb szükséges');
     if (n === 0 || (allowed && !allowed.length)) return [];
     return planResult(plan.call(p,u,n,rng,allowed),allowed);
+  };
+  // Ikerfeladat („Próbáld ki egy hasonlóval!”): a csomag twin(task,item,rng,u) függvénye ad egy HASONLÓ, de másik feladatot.
+  // Alapból ugyanaz a téma és sub – ez akkor jó, ha a sub feladattípust jelöl (új számokkal új feladat lesz); ha a sub maga a szó, kell a twin.
+  const twinHook=fn(raw.twin,id,'twin',null);
+  p.twin=(task,item,rng,u) => {
+    const base={topic:item?.topic ?? task.topic,sub:task.sub,level:task.level};
+    const r=twinHook ? twinHook.call(p,task,item,rng,u) : null;
+    const out=r ?? base;
+    if (!object(out) || !seen.has(out.topic)) fail(id,'twin','ismert témájú feladatelem szükséges');
+    return {level:task.level,...out,twin:true};
   };
   if (raw.review !== undefined) {
     if (!object(raw.review) || typeof raw.review.count !== 'function' || typeof raw.review.plan !== 'function') fail(id,'review','count és plan függvény szükséges');
