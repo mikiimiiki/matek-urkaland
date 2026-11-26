@@ -27,7 +27,8 @@ export function settingsDefs(G, P) {
     { key: "gifts", group: "goal", scope: "child", type: "toggle", default: true, label: "🎁 Ajándékdobozok a nagy cél után", help: "Naponta egyszer választhat egy dobozt (pl. holnapi előleg, puszi, ölelés)." },
     // ünnepek
     { key: "events", group: "holiday", scope: "child", type: "toggle", default: true, label: "🎄 Ünnepi események", help: "Adventi naptár, Mikulás, karácsony, szilveszter – ünnepi jutalmak a napi küldetésért." },
-    { key: "snow", group: "holiday", scope: "child", type: "toggle", default: true, label: "❄️ Hóesés decemberben", help: "December 1. és január 6. között hó esik a háttérben (ha az ünnepi események be vannak kapcsolva). Csökkentett mozgás beállításnál magától kikapcsol." },
+    { key: "snow", group: "holiday", scope: "child", type: "toggle", default: true, label: "❄️ Hóesés, amikor havazik", help: "Ha az alábbi városban aznap havazott vagy havazás várható, egész nap esik a hó a háttérben. Ha nincs időjárás-adat (nincs internet, ismeretlen város), december 1. és január 6. között esik (az ünnepi eseményekkel). Csökkentett mozgás beállításnál magától kikapcsol." },
+    { key: "city", group: "holiday", scope: "child", type: "text", default: d.city ?? "Győr", maxLength: 60, placeholder: "pl. Győr", label: "🏙️ Város az időjáráshoz", help: "Naponta egyszer lekérdezzük, hogy itt havazik-e ma (Open-Meteo, ingyenes időjárás-szolgáltatás). Csak a város neve megy ki, pontos helyet nem kérünk." },
     // eszköz
     { key: "syncMode", group: "sync", scope: "device", type: "radio", default: "task", label: "Szinkronmód ezen az eszközön", help: "Mikor menjenek fel az eredmények a felhőbe. A gyerek munkája mindig azonnal mentődik ebben a böngészőben is.",
       options: [
@@ -42,5 +43,5 @@ export function settingsDefs(G, P) {
 export const GROUPS = [
   { id: "play", title: "🎮 Gyakorlás" },
   { id: "goal", title: "🏆 Napi cél és szorzók" },
-  { id: "holiday", title: "🎄 Ünnepek" },
+  { id: "holiday", title: "🎄 Ünnepek és időjárás" },
 ];

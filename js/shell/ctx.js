@@ -6,7 +6,8 @@ import { resolve } from "../core/settings.js";
 import { unlockedSet, equipped, applyVars, swapClass } from "../core/cosmetics.js";
 import { activeEvents } from "../core/events.js";
 import { setSnow } from "../core/snow.js";
-import { dayNum } from "../core/dates.js";
+import { dayNum, dateKey, isSimulated } from "../core/dates.js";
+import { snowToday, cachedSnow } from "../core/weather.js";
 import { streakNow } from "../core/dailygoal.js";
 import { playSound } from "../core/sound.js";
 
@@ -56,9 +57,24 @@ export function applyLook() {
   // a Saját sarok fő figurája (ha ki van téve) a kabala helyén áll – akkor a rakéta-skin nem írja felül
   if (!$("mascot")?.dataset.room) swapClass($("mascot"), "rk-", (cat.itemById(L.rocket) || {}).cls);
   swapClass($("tb-user"), "fr-", (cat.itemById(L.frame) || {}).cls);
-  // hóesés: ha az ünnepek és a hó is be van kapcsolva, és téli időszak van
+  // ❄️ hóesés: ha a megadott városban ma havazott / havazás várható (naponta egyszer lekérdezve);
+  // ha nincs időjárás-adat, a régi naptári szabály (ünnepi események + téli időszak)
   const P = u ? prefs(u) : {};
-  setSnow(u && P.events && P.snow && activeEvents(G().events.EVENTS, dayNum(), "ambient").some(e => e.effect === "snow"), G().snowColor ? { color: G().snowColor } : {});
+  const w = u && P.snow ? weatherSnow(P.city) : null;
+  const calendar = !!(P.events && activeEvents(G().events.EVENTS, dayNum(), "ambient").some(e => e.effect === "snow"));
+  setSnow(!!(u && P.snow && (w ?? calendar)), G().snowColor ? { color: G().snowColor } : {});
+}
+// Havazik-e ma a városban: a mai gyorsítótárból azonnal (true/false), különben null és háttérben lekérdez
+let wxAsked = "";
+export function weatherSnow(city) {
+  // csak valódi, weben futó oldalon kérdez (tesztben, szimulált napon és fájlból nyitva nem)
+  if (isSimulated() || typeof location === "undefined" || !/^https?:/.test(location.protocol) || typeof localStorage === "undefined" || typeof fetch === "undefined") return null;
+  const day = dateKey(dayNum()), key = (C.storeKey || G().storeKey || "jatek") + "_weather";
+  let hit = null; try { hit = cachedSnow(localStorage, key, city, day); } catch { /* privát mód */ }
+  if (hit) return hit.snow;
+  const tag = `${city}|${day}`;
+  if (wxAsked !== tag) { wxAsked = tag; snowToday(city, day, { store: localStorage, key }).then(() => applyLook()); }
+  return null;
 }
 // Tárgy ikonja és neve (matrica: "st:…")
 export const itemIcon = id => { if (id.startsWith("st:")) return id.slice(3); const it = G().catalog.itemById(id); if (!it) return ""; if (it.kind === "bg") return it.special ? "🎄" : "🌌"; return it.show || ""; };

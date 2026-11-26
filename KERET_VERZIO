@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.12.0",
-  "commit": "34c857f",
+  "verzio": "1.13.0",
+  "commit": "0d32376",
   "datum": "2026-11-26",
-  "ujjlenyomat": "1588e1b05d6e5f7fb268f4a029e5ead870fd41f106cd079f127a1604678316f8",
+  "ujjlenyomat": "802fbea0bf80d9da91fcb10c9cdc9bd8366c63a6c808dedd7516e2081017e84d",
   "fajlok": [
     "js/core/answer-spec.js",
     "js/core/answer-ui.js",
@@ -36,6 +36,7 @@
     "js/core/tab-lease.js",
     "js/core/tabs.js",
     "js/core/tile-ui.js",
+    "js/core/weather.js",
     "js/core/weekly.js",
     "js/shell/cloud-ui.js",
     "js/shell/collection.js",

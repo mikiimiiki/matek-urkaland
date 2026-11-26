@@ -1,6 +1,6 @@
 // ===== Leíró alapú beállítások =====
-// Egy beállítás leírása: { key, scope: "family" | "child" | "device", type: "number" | "select" | "toggle" | "radio",
-//   label, help, default, min, max, options: [érték] vagy [{ value, label, help }], unit }
+// Egy beállítás leírása: { key, scope: "family" | "child" | "device", type: "number" | "select" | "toggle" | "radio" | "text",
+//   label, help, default, min, max, options: [érték] vagy [{ value, label, help }], unit, maxLength (szövegnél) }
 // A keret ebből rajzolja az űrlapot, és ellenőrzi az értéket. A tárolást a játék adja meg (store objektum),
 // így ugyanez a modul más játékhoz is jó.
 import { el, escHtml } from "./dom.js";
@@ -8,6 +8,7 @@ import { el, escHtml } from "./dom.js";
 export function clampValue(def, v) {
   if (def.type === "number") { let n = Math.round(Number(v)); if (!Number.isFinite(n)) n = def.default; if (def.min != null) n = Math.max(def.min, n); if (def.max != null) n = Math.min(def.max, n); return n; }
   if (def.type === "toggle") return !!v;
+  if (def.type === "text") return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, def.maxLength || 80) || def.default;
   if (def.type === "select" || def.type === "radio") { const vals = def.options.map(o => typeof o === "object" ? o.value : o); return vals.some(x => String(x) === String(v)) ? vals.find(x => String(x) === String(v)) : def.default; }
   return v;
 }
@@ -37,6 +38,11 @@ export function renderForm(container, defs, get, set) {
     } else if (def.type === "toggle") {
       const i = el("input"); i.type = "checkbox"; i.id = id; i.checked = !!v; i.className = "switch";
       i.addEventListener("change", () => set(def, i.checked));
+      ctl.append(i);
+    } else if (def.type === "text") {
+      const i = el("input"); i.type = "text"; i.id = id; i.value = v; i.maxLength = def.maxLength || 80; i.autocomplete = "off";
+      if (def.placeholder) i.placeholder = def.placeholder;
+      i.addEventListener("change", () => { const t = clampValue(def, i.value); i.value = t; set(def, t); });
       ctl.append(i);
     } else if (def.type === "radio") {
       const g = el("div", "set-radios"); g.setAttribute("role", "radiogroup");
