@@ -52,7 +52,8 @@ export function look(u) {
 export function applyLook() {
   const u = cur(), cat = G().catalog, L = u ? look(u) : cat.DEFAULTS;
   applyVars((cat.itemById(L.bg) || cat.itemById(cat.DEFAULTS.bg)).vars);
-  swapClass($("mascot"), "rk-", (cat.itemById(L.rocket) || {}).cls);
+  // a Saját sarok fő figurája (ha ki van téve) a kabala helyén áll – akkor a rakéta-skin nem írja felül
+  if (!$("mascot")?.dataset.room) swapClass($("mascot"), "rk-", (cat.itemById(L.rocket) || {}).cls);
   swapClass($("tb-user"), "fr-", (cat.itemById(L.frame) || {}).cls);
   // hóesés: ha az ünnepek és a hó is be van kapcsolva, és téli időszak van
   const P = u ? prefs(u) : {};

@@ -525,6 +525,6 @@ body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic 
 .hc-fig { width: 58px; height: 58px; border: 0; background: transparent; font-size: 44px; line-height: 1; padding: 0; position: relative; filter: drop-shadow(0 4px 4px rgba(0,0,0,.25)); }
 .hc-fig.hc-left::after, .hc-fig.hc-right::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -6px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #a16207, #ca8a04, #a16207); }
 .hc-ped { display: flex; justify-content: center; min-height: 6px; margin-top: 2px; }
-.hc-fig.hc-mid { width: 64px; height: 50px; font-size: 34px; border-radius: 10px 10px 4px 4px; background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(148,163,184,.35)); }
+.mascot.hc-main { cursor: pointer; }
 .hc-hint { border: 2px dashed currentColor; background: transparent; color: inherit; border-radius: 12px; padding: 4px 12px; font-size: 13px; font-weight: 700; opacity: .7; }
 .hc-fig:hover, .hc-hint:hover { transform: translateY(-2px); }

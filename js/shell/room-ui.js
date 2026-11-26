@@ -1,11 +1,11 @@
 // ===== 🏠 Saját sarkom: a kinyitott tárgyak közül hármat kitehet a gyerek =====
-// Látszik: a kezdőlap tetején a kabala körül, és játék közben a jobb oldali mezőben (feladatonként váltakozva).
+// Látszik: a kezdőlap tetején (a középső a kabala helyére kerül), és játék közben a jobb oldali mezőben (váltakozva).
 // Díszíteni a Gyűjtemény „Saját sarkom” fülén lehet.
 // Csak az elrendezés mentődik (u.room: 3 tárgyazonosító, üres hely = ""); a gyűjtemény és a felszerelés nem változik.
 // Koppintás: tárgy → hely (vagy hely → tárgy); a ✕ leveszi a tárgyat. Billentyűzettel: Tab + Enter.
 import { $, el, btn, escHtml as esc } from "../core/dom.js";
 import { roomLayout, placeInRoom, ROOM_SLOTS } from "../core/room.js";
-import { C, G, cur, itemIcon, saveUser, unlocked } from "./ctx.js";
+import { C, G, cur, itemIcon, saveUser, unlocked, applyLook } from "./ctx.js";
 
 const ROOM_ICONS = ["📚", "🏺", "🪴"];
 function roomItems(u) {
@@ -21,7 +21,8 @@ export function roomIcons(u) {
   const items = roomItems(u);
   return roomLayout(u.room, id => items.has(id)).filter(Boolean).map(id => itemIcon(id) || "◇");
 }
-// Kezdőlap teteje: bal polc – kabala – jobb polc, a középső talapzat a kabala alatt. Koppintásra a díszítő fül nyílik.
+// Kezdőlap teteje: bal polc – fő figura (a kabala helyén) – jobb polc. Koppintásra a díszítő fül nyílik.
+// A középső hely tárgya lecseréli a kabalát (pl. a bagolyt); ha üres, a játék saját kabalája marad.
 export function renderRoomRow(u) {
   const old = $("home-room"); if (old) { old.hidden = true; old.replaceChildren(); }   // a régi kis sor helyett
   const mascot = $("mascot"); if (!mascot) return;
@@ -30,6 +31,8 @@ export function renderRoomRow(u) {
     corner = el("div", "hero-corner"); corner.id = "hero-corner";
     mascot.before(corner); corner.append(el("span", "hc-slot hc-left"), mascot, el("span", "hc-slot hc-right"));
     const ped = el("div", "hc-ped"); ped.id = "hero-ped"; corner.after(ped);
+    mascot.dataset.default = mascot.textContent;
+    mascot.addEventListener("click", openRoom);
   }
   const items = roomItems(u), layout = roomLayout(u.room, id => items.has(id));
   const fig = (i, cls) => {
@@ -42,9 +45,15 @@ export function renderRoomRow(u) {
   };
   corner.children[0].replaceWith(fig(0, "hc-left"));
   corner.children[2].replaceWith(fig(2, "hc-right"));
+  // fő figura: a középső hely tárgya a kabala helyén (rakéta-skinnél a saját díszével)
+  const mid = layout[1] && items.get(layout[1]);
+  mascot.textContent = mid ? itemIcon(layout[1]) || "◇" : mascot.dataset.default;
+  if (mid) { mascot.dataset.room = "1"; [...mascot.classList].filter(c => c.startsWith("rk-")).forEach(c => mascot.classList.remove(c)); if (mid.kind === "rocket" && mid.cls) mascot.classList.add(mid.cls); }
+  else if (mascot.dataset.room) { delete mascot.dataset.room; applyLook(); }
+  mascot.title = mid ? `${mid.label} – Saját sarkom díszítése` : "Saját sarkom díszítése";
+  mascot.classList.add("hc-main");
   const ped = $("hero-ped");
-  if (layout[1]) ped.replaceChildren(fig(1, "hc-mid"));
-  else if (!layout.some(Boolean) && items.size) {
+  if (!layout.some(Boolean) && items.size) {
     const hint = btn("hc-hint", "＋ Díszítsd a sarkodat!", openRoom); hint.title = "Saját sarkom – tegyél ki 3 tárgyat a gyűjteményedből";
     ped.replaceChildren(hint);
   } else ped.replaceChildren();

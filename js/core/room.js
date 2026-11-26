@@ -1,5 +1,5 @@
 // A sorrend mentési szerződés: új helyet csak a végére tegyünk. Az üres hely is mentett érték.
-export const ROOM_SLOTS = ["Bal polc", "Középső talapzat", "Jobb polc"];
+export const ROOM_SLOTS = ["Bal polc", "Fő figura (középen)", "Jobb polc"];
 export function roomLayout(saved, canUse = () => true) {
   const used = new Set();
   return ROOM_SLOTS.map((_, i) => {
