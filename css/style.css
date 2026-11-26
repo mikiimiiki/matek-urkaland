@@ -519,11 +519,12 @@ body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic 
 .room-empty { text-align: center; padding: 14px; }
 .fb.ok.improved { background: #ecfdf5; border-color: #10b981; }
 .pnote { margin: 10px 0 4px; }
-/* Saját sarkom a kezdőlap tetején: bal polc – kabala – jobb polc, alatta a középső talapzat */
-.hero-corner { display: flex; align-items: flex-end; justify-content: center; gap: 18px; }
-.hc-slot { width: 58px; }
-.hc-fig { width: 58px; height: 58px; border: 0; background: transparent; font-size: 44px; line-height: 1; padding: 0; position: relative; filter: drop-shadow(0 4px 4px rgba(0,0,0,.25)); }
-.hc-fig.hc-left::after, .hc-fig.hc-right::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -6px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #a16207, #ca8a04, #a16207); }
+/* Saját sarkom a kezdőlap tetején: bal figura – fő figura (a kabala helyén) – jobb figura; a szélsők a küldetésdoboz szélével egy vonalban */
+.hero-corner { display: flex; align-items: flex-end; justify-content: space-between; max-width: 760px; margin: 0 auto; }
+.hc-slot { width: 60px; }
+.hc-fig { width: 60px; height: 58px; border: 0; background: transparent; font-size: 44px; line-height: 1; padding: 0; position: relative; filter: drop-shadow(0 4px 4px rgba(0,0,0,.25)); }
+.hc-fig.hc-left { text-align: left; }
+.hc-fig.hc-right { text-align: right; }
 .hc-ped { display: flex; justify-content: center; min-height: 6px; margin-top: 2px; }
 .mascot.hc-main { cursor: pointer; }
 .hc-hint { border: 2px dashed currentColor; background: transparent; color: inherit; border-radius: 12px; padding: 4px 12px; font-size: 13px; font-weight: 700; opacity: .7; }
