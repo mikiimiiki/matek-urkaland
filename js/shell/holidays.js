@@ -3,7 +3,7 @@ import { $, el, btn, toast, escHtml as esc } from "../core/dom.js";
 import { modal } from "../core/modal.js";
 import { dayNum, dateKey } from "../core/dates.js";
 import { activeEvents, claimOnce, adventState, adventDay, openWindow } from "../core/events.js";
-import { G, cur, prefs, save, confetti, itemIcon, itemLabel } from "./ctx.js";
+import { G, cur, prefs, save, confetti, itemIcon, itemLabel, sfx } from "./ctx.js";
 import { renderTop, renderHome } from "./home.js";
 import { openCollection } from "./collection.js";
 
@@ -22,7 +22,7 @@ export function checkHolidays() {
   won.forEach((r, i) => setTimeout(() => holidayModal(r.ev.title, r.ev.text, r.ev.reward), i * 400));
 }
 function holidayModal(title, text, reward) {
-  confetti();
+  confetti(); sfx("item");
   modal((box, close) => {
     box.classList.add("celebrate");
     box.append(el("div", "big-emoji", title.split(" ")[0]), el("h3", null, esc(title.split(" ").slice(1).join(" ") || title)));

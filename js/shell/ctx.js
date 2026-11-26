@@ -8,6 +8,7 @@ import { activeEvents } from "../core/events.js";
 import { setSnow } from "../core/snow.js";
 import { dayNum } from "../core/dates.js";
 import { streakNow } from "../core/dailygoal.js";
+import { playSound } from "../core/sound.js";
 
 export const C = { game: null, pack: null, defs: [], state: null, cloud: null, device: null, rng: null, S: null, tts: false, gearApi: null };
 export const G = () => C.game;
@@ -74,6 +75,9 @@ export function confetti() {
   const t0 = performance.now();
   (function frame(t) { ctx.clearRect(0, 0, cv.width, cv.height); ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; ctx.fillStyle = p.c; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); if (star) drawStar(p.s * .8); else if (dot) { ctx.beginPath(); ctx.arc(0, 0, p.s / 2.5, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }); if (t - t0 < 2800) requestAnimationFrame(frame); else ctx.clearRect(0, 0, cv.width, cv.height); })(t0);
 }
+
+// ---- 🔔 hangjelzés (a szülő kikapcsolhatja: ⚙️ → Gyakorlás → Hangjelzések) ----
+export function sfx(name) { const u = cur(); if (u && prefs(u).sound === false) return; playSound(name); }
 
 // ---- felolvasás ----
 // lang: a feladat saját nyelve (pl. "de-DE"); alapból a játék nyelve

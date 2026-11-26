@@ -15,6 +15,7 @@ import { startMission, goHome, homeKeys, round, debugShow } from "./play.js";
 import { newPlayer, onUserClick, openGear, enforceDevice, maybeAskDevice, onDeviceRemote } from "./players.js";
 import { openCollection } from "./collection.js";
 import { checkHolidays } from "./holidays.js";
+import { maybeWeekly } from "./weekly-ui.js";
 import { openCloud, renderCloudLive, refreshCloud } from "./cloud-ui.js";
 import { openHelp } from "./help.js";
 import { openGifts, turboGreet, bigInfo } from "./goal-ui.js";
@@ -97,6 +98,7 @@ export function startShell({ game, pack }) {
   if (isSimulated()) setTimeout(() => toast(`🧪 Szimulált nap: <b>${dateKey(dayNum())}</b> – külön tesztadatokkal, felhő nélkül.`, 6000), 500);
   else C.device.ready.then(() => C.cloud.init());
   setTimeout(checkHolidays, 1200);
+  setTimeout(() => maybeWeekly(), 2400);   // 📅 az új hét első belépésekor (a többi ablak után)
   setTimeout(maybeAskDevice, 1500);
   setTimeout(() => { const u = cur(); if (u) { turboGreet(); openGifts(); } }, 1800);
   // offline működés: csak ha a játéknak van service workere (GAME.serviceWorker)

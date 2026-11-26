@@ -6,14 +6,14 @@ import { histAgg, pctOf, compare } from "../core/progress.js";
 import { dayNum, dateKey } from "../core/dates.js";
 import { streakNow } from "../core/dailygoal.js";
 import { COMMON_BADGES } from "../core/badges.js";
-import { C, G, cur, saveUser, confetti, unlocked, look, itemIcon } from "./ctx.js";
+import { C, G, cur, saveUser, confetti, unlocked, look, itemIcon, sfx } from "./ctx.js";
 import { roomTab, resetRoomSelection } from "./room-ui.js";
 
 let wardrobeKind = "av", api = null;
 
 export function celebrateRank(i) {
   const g = G(), R = g.ranks.RANKS[i], cat = g.catalog;
-  confetti();
+  confetti(); sfx("item");
   modal((box, close) => {
     box.classList.add("celebrate");
     box.append(el("div", "big-emoji", "🎉"), el("h3", null, `Új rang: ${esc(R.name)}!`),

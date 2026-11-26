@@ -12,7 +12,8 @@ import { recordAnswer, addBonus, retypeState } from "../core/answers.js";
 import { checkBadges, COMMON_BADGES } from "../core/badges.js";
 import { shState, shCap, shEnd } from "../core/stephelp.js";
 import { missionProgress, completeMission, addCorrect, giftPending } from "../core/dailygoal.js";
-import { C, G, cur, prefs, save, confetti, speak } from "./ctx.js";
+import { C, G, cur, prefs, save, confetti, speak, sfx } from "./ctx.js";
+import { maybeWeekly } from "./weekly-ui.js";
 import { show, renderTop, renderHome, freeSize, openTopics } from "./home.js";
 import { celebrateRank } from "./collection.js";
 import { checkHolidays } from "./holidays.js";
@@ -232,6 +233,7 @@ function correct() {
   const praise = ev.improved ? IMPROVED_TITLE : rr === 1 ? PRAISE()[C.rng.int(0, PRAISE().length - 1)] : "Javítottad! ✔️";
   $("side-body").innerHTML = `<div class="fb ok${ev.improved ? " improved" : ""}"><div class="fb-title">${praise}</div>${ev.improved ? IMPROVED_TEXT : rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(t.correctText)}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ${G().pointsIcon}</b>${ev.combo >= 3 && rr === 1 ? `<br>🔥 ${ev.combo}. elsőre jó egymás után!` : ""}${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
   if (rr === 2) $("side-body").append(btn("secondary", "👀 Megnézem a megoldást", () => { $("side-body").append(stepsAll(t)); }));
+  sfx(ev.improved ? "improved" : "ok");
   if (C.tts) speak(ev.improved ? `Fejlődtél! ${IMPROVED_TEXT}` : praise);
   afterEvents(ev);
   nextButton(rr === 1 && !ev.improved);
@@ -310,7 +312,7 @@ function afterEvents(ev) {
     const me = completeMission(u);
     if (me) me.badges = checkBadges(u, [...COMMON_BADGES, ...(C.pack.badges || [])]);
     save(); renderTop();
-    if (me) setTimeout(() => celebrate(me), 700);
+    if (me) setTimeout(() => { sfx("mission"); celebrate(me); }, 700);
     setTimeout(checkHolidays, 1600);
   }
 }
@@ -363,6 +365,7 @@ export function goHome() {
   }   // félbehagyott kör: az addig gyűjtött is látsszon
   S = null; helpBadge(); show("scr-home"); renderTop(); renderHome();
   C.cloud.checkpoint("home"); maybeAskDevice(); checkHolidays();
+  setTimeout(() => maybeWeekly(), 1400);   // ha közben új hét kezdődött
   const u = cur();
   if (u && giftPending(u) && prefs(u).gifts !== false) setTimeout(() => openGifts(), 900);
 }
