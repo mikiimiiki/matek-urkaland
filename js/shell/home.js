@@ -4,7 +4,10 @@ import * as keys from "../core/keys.js";
 import { missionProgress, streakNow, shieldAvailable, bigProgress } from "../core/dailygoal.js";
 import { C, G, cur, prefs, applyLook, itemIcon, rewardProgress, rewardKinds } from "./ctx.js";
 import { allowedUsers, userLocked } from "./players.js";
-import { startFree, startReview, playKeys, homeKeys } from "./play.js";
+import { startFree, startReview, resumeInfo, resumeRound, playKeys, homeKeys } from "./play.js";
+import { renderRoomRow } from "./room-ui.js";
+import { histAgg, pctOf } from "../core/progress.js";
+import { dayNum } from "../core/dates.js";
 import { renderAdvent } from "./holidays.js";
 import { COMMON_BADGES } from "../core/badges.js";
 
@@ -13,6 +16,18 @@ export const openTopics = u => C.pack.topics.map(t => t.id).filter(id => !blocke
 const FREE_SIZES = [3, 5, 10];
 export const freeSize = () => { const f = +prefs(cur()).freeTasks; return FREE_SIZES.includes(f) ? f : 5; };
 
+// 🎯 Gyenge téma: a nyitott témák közül az, amelyikben az utolsó 14 napban a legrosszabb az elsőre jó arány
+// (legalább 6 feladat, 85% alatt). null, ha nincs ilyen.
+export function weakTopic(u, allowed, today = dayNum()) {
+  let best = null;
+  for (const t of C.pack.topics) {
+    if (!allowed.includes(t.id)) continue;
+    const s = histAgg(u, today - 13, today, t.id), pct = pctOf(s);
+    if (s.n < 6 || pct >= 85) continue;
+    if (!best || pct < best.pct) best = { t, pct, n: s.n };
+  }
+  return best;
+}
 export function show(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
   scrollTo(0, 0);
@@ -75,15 +90,24 @@ export function renderHome() {
     rb.innerHTML = reached ? `🎁 <b>${esc(reached.r.text)}</b> – elérted! Szólj a szüleidnek! 🎉` : `🎁 Következő jutalom: <b>${esc(next.r.text)}</b><br><span class="soft small">még ${next.p.need - next.p.have} ${rewardKinds()[next.r.kind] || ""}</span><div class="bar"><i style="width:${Math.round(next.p.pct * 100)}%"></i></div>`;
   }
   renderAdvent(u);
+  // „Neked ajánljuk”: félbehagyott kör, javító küldetés (ha van mit javítani) vagy gyenge téma – csak ha van mit mutatni
+  const offers = $("home-offers"), allowed = openTopics(u);
+  if (offers) {
+    const items = [], ri = resumeInfo(u);
+    if (ri) items.push(btn("primary offer offer-resume", `▶ Folytatod a kört? <span class="offer-sub">${esc(ri.title)} · ${ri.done}/${ri.total} kész</span>`, resumeRound));
+    const rv = allowed.length && C.pack.review ? C.pack.review.count(u, allowed) : 0;
+    if (rv > 0) items.push(btn("secondary offer offer-review", `🩹 Javító küldetés <span class="offer-sub">${rv} ${esc(C.pack.review.unit || "hibás feladat")} vár javításra · ${Math.min(rv, freeSize())} feladat egy körben</span>`, () => startReview()));
+    else {
+      const w = weakTopic(u, allowed);
+      if (w) items.push(btn("secondary offer offer-weak", `🎯 Gyakorold ezt: ${esc(w.t.place || w.t.name)} <span class="offer-sub">az utóbbi 2 hétben ${w.pct}% ment elsőre · ${freeSize()} feladat</span>`, () => startFree(w.t.id)));
+    }
+    offers.replaceChildren(...(items.length ? [el("h3", null, "Neked ajánljuk"), ...items] : []));
+    offers.hidden = !items.length;
+  }
+  renderRoomRow(u);
   // témakártyák (a lezártak 🔒-vel)
   const map = $("map"), bl = blockedTopics(u); map.innerHTML = "";
-  // 🩹 Ismétlő kör: ha a csomag tud ilyet (PACK.review), és van mit ismételni (hibás / esedékes feladatok)
-  const rv = C.pack.review ? C.pack.review.count(u) : 0;
-  if (rv > 0) {
-    const rb2 = btn("tcard review", `<div class="orb" style="background:#ef4444;--glow:#ef4444">🩹</div><div class="pname">Ismétlő kör</div><div class="ptype">${rv} ${esc(C.pack.review.unit || "hibás feladat")}</div><div class="plvl">${Math.min(rv, freeSize())} feladat egy körben</div>`, () => startReview());
-    rb2.title = "Ismétlő kör – a hibás és ismétlésre váró feladatok (Enter: indulás)";
-    map.append(rb2);
-  }
+  // (a 🩹 javító küldetés a „Neked ajánljuk” kártyára került)
   C.pack.topics.forEach(t => {
     const st2 = C.pack.status(u, t.id), locked = bl.includes(t.id);
     const b2 = btn("tcard" + (locked ? " blocked" : ""), `<div class="orb" style="background:${t.color};--glow:${t.color}">${t.icon}</div><div class="pname">${esc(t.place || t.name)}</div><div class="ptype">${esc(t.name)}</div><div class="pstars">${[1, 2, 3].map(i => `<span class="${st2.stars >= i ? "" : "off"}">⭐</span>`).join("")}</div><div class="plvl">${locked ? "🔒 most szünetel" : esc(st2.label)}</div>`, () => { if (locked) return toast("🔒 Ezt most lezárták, hogy a többire jusson idő. Válassz egy másikat!"); startFree(t.id); });

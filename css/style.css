@@ -494,3 +494,28 @@ body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic 
 .xkey { min-width: 46px; height: 46px; border: 2px solid var(--line); background: #fff; border-radius: 12px; font-size: 22px; font-weight: 800; box-shadow: 0 3px 0 var(--line); }
 .xkey:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
 .xkey:disabled { opacity: .45; box-shadow: none; }
+
+/* „Neked ajánljuk” kártya, Saját sarkom, fejlődésjelzés */
+.home-offers { max-width: 760px; margin: 12px auto; display: grid; gap: 8px; }
+.home-offers h3 { margin: 0 0 2px; }
+.home-offers .offer { width: 100%; text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 16px; font-size: 17px; }
+.offer-sub { font-size: 13px; font-weight: 600; opacity: .8; }
+.home-room { max-width: 760px; margin: 10px auto 12px; }
+.home-offers[hidden], .home-room[hidden] { display: none; }
+.room-row { width: 100%; text-align: left; background: var(--card); color: var(--ink); border: 2px dashed var(--line); border-radius: 16px; padding: 8px 16px; font-weight: 700; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.room-row-items { font-size: 22px; letter-spacing: 4px; }
+.room-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 0 6px; }
+.room-slot-wrap { position: relative; }
+.room-slot { width: 100%; min-height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 3px dashed var(--line); border-radius: 18px; background: #f8fafc; padding: 8px 4px; overflow-wrap: anywhere; }
+.room-slot.on, .room-item.on { border-style: solid; border-color: var(--pri2); box-shadow: 0 0 0 3px rgba(124,58,237,.25); }
+.room-slot.target { border-color: var(--pri2); background: #f5f3ff; }
+.room-slot-name { font-size: 12px; font-weight: 700; opacity: .75; }
+.room-icon { font-size: 34px; line-height: 1.2; }
+.room-off { position: absolute; top: -8px; right: -8px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); background: #fff; font-weight: 900; padding: 0; }
+.room-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.room-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border: 2px solid var(--line); border-radius: 14px; background: #fff; overflow-wrap: anywhere; }
+.room-item.placed { background: #f0fdf4; }
+.room-at { position: absolute; top: 2px; right: 4px; font-size: 14px; }
+.room-empty { text-align: center; padding: 14px; }
+.fb.ok.improved { background: #ecfdf5; border-color: #10b981; }
+.pnote { margin: 10px 0 4px; }

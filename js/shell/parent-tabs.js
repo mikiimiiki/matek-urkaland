@@ -8,6 +8,7 @@ import { trendChart } from "../core/charts.js";
 import { dayNum, dateKey } from "../core/dates.js";
 import { monthKey } from "../core/device.js";
 import { multOf } from "../core/dailygoal.js";
+import { improvementsIn } from "../core/learning-feedback.js";
 import { GROUPS } from "./settings-defs.js";
 
 // Bájtok emberi formában
@@ -43,6 +44,9 @@ export function parentTabs(app) {
     const metrics = Object.values(P.metrics || {}).map(m => `<span>${m.label}: <b>${m.value(u)}</b></span>`).join("");
     box.append(el("div", "pstrip", `<span>🔥 Sorozat: <b>${app.streakNow(u)} nap</b> (legjobb: ${u.streak.best})</span>${metrics}<span>${G.pointsIcon} ${cap(G.pointsName)}: <b>${u.pts}</b></span>`));
     box.append(el("div", "ptiles", tile("Ma", t) + tile("Utolsó 7 nap", t - 6) + tile("Utolsó 30 nap", t - 29)));
+    // 🌱 fejlődésjelzés: korábban nehéz feladat, amely később elsőre, segítség nélkül sikerült
+    const imp7 = improvementsIn(u, t - 6, t), imp30 = improvementsIn(u, t - 29, t);
+    box.append(el("p", "pnote", imp7 ? `🌱 Az utolsó 7 napban <b>${imp7}</b> korábban nehéz feladat ment már elsőre, segítség nélkül (30 nap: ${imp30}).` : `🌱 Fejlődésjelzés: ha egy korábban elrontott feladat később elsőre, segítség nélkül sikerül, itt megjelenik (30 nap: ${imp30}).`));
 
     const period = getPeriod(), Q = PERIODS[period];
     const seg = el("div", "segs");

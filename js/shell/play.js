@@ -1,3 +1,5 @@
+import { learningKey, noteLearning, IMPROVED_TITLE, IMPROVED_TEXT } from "../core/learning-feedback.js";
+import { dayNum } from "../core/dates.js";
 import { isCompositionKey } from "../core/answer-ui.js";
 import { createRecordGate, taskKey } from "../core/pack-contract.js";
 // ===== Gyakorlókör: feladat → ellenőrzés → tipp → magyarázat → ikerfeladat → továbblépés =====
@@ -30,38 +32,68 @@ function disposeAnswer() {
   $("task-actions").replaceChildren();
 }
 
+// ---------- ▶ Félbehagyott kör folytatása ----------
+// A kör állása a gyerek mentésébe kerül (u.resume) minden válasz után; aznap, ugyanazzal a tananyaggal folytatható.
+const packTag = () => `${C.pack.id}@${C.pack.version}`;
+function keepResume() {
+  const u = cur(); if (!u || !S) return;
+  u.resume = S.idx < S.plan.length ? {
+    v: 1, day: dayNum(), pack: packTag(), mode: S.mode, topic: S.topic || null, title: $("play-title").textContent,
+    idx: S.idx, res: S.res.slice(),
+    plan: S.plan.map(({ topic, sub, level, seed, twin }) => ({ topic, sub: sub ?? null, level: level ?? null, seed: seed ?? null, twin: !!twin })),
+  } : null;
+}
+// A kezdőlap ajánlatához: { done, total, title } vagy null
+export function resumeInfo(u = cur()) {
+  const r = u && u.resume;
+  if (!r || r.v !== 1 || r.day !== dayNum() || r.pack !== packTag() || !Array.isArray(r.plan) || !(r.idx < r.plan.length)) return null;
+  if (!r.plan.every(it => it && C.pack.topics.some(t => t.id === it.topic))) return null;
+  return { done: r.idx, total: r.plan.length, title: r.title || "" };
+}
+export function resumeRound() {
+  const u = cur(), r = u && u.resume;
+  if (!resumeInfo(u)) { if (u) { u.resume = null; save(); } return toast("Ez a kör már nem folytatható – indíts egy újat!"); }
+  disposeAnswer();
+  const plan = r.plan.map(it => { const o = { topic: it.topic, sub: it.sub ?? null, twin: !!it.twin }; if (it.level != null) o.level = it.level; if (it.seed != null) o.seed = it.seed; return o; });
+  S = { mode: r.mode, topic: r.topic || undefined, plan, idx: r.idx, res: (r.res || []).slice(), combo: 0 };
+  show("scr-play"); $("play-title").textContent = r.title || "";
+  nextTask();
+}
+function beginRound(state, title) {
+  disposeAnswer();
+  S = state;
+  show("scr-play"); $("play-title").textContent = title;
+  keepResume(); save();
+  nextTask();
+}
+
 export function startMission() {
   const u = cur(), P = prefs(u), mp = missionProgress(u, P);
   // a küldetés aznap összesen goalTasks feladat (a már megoldottak beszámítanak); utána a plusz kör is ennyi feladat
   const n = mp.done ? P.goalTasks : Math.max(1, P.goalTasks - mp.n);
-  disposeAnswer();
-  S = { mode: "mission", plan: C.pack.plan(u, n, C.rng, openTopics(u)), idx: 0, res: [], combo: 0 };
-  show("scr-play"); $("play-title").textContent = mp.done ? G().texts.plus : G().texts.mission;
-  nextTask();
+  const plan = C.pack.plan(u, n, C.rng, openTopics(u));
+  if (!plan.length) return toast("Most nincs nyitott téma ehhez a küldetéshez.");
+  beginRound({ mode: "mission", plan, idx: 0, res: [], combo: 0 }, mp.done ? G().texts.plus : G().texts.mission);
 }
 // Szabad gyakorlás: egy témából rögzített hosszú kör (a szülő állítja: 3, 5 vagy 10 feladat)
 export function startFree(topicId) {
   const n = freeSize(), t = C.pack.topics.find(x => x.id === topicId);
-  disposeAnswer();
-  S = { mode: "free", topic: topicId, plan: Array.from({ length: n }, () => ({ topic: topicId, sub: null })), idx: 0, res: [], combo: 0 };
-  show("scr-play"); $("play-title").textContent = `${t.icon} ${t.place || t.name} – ${n} feladat`;
-  nextTask();
+  if (!t || !openTopics(cur()).includes(topicId)) return toast("Ez a téma most szünetel. Válassz egy másikat!");
+  beginRound({ mode: "free", topic: topicId, plan: Array.from({ length: n }, () => ({ topic: topicId, sub: null })), idx: 0, res: [], combo: 0 }, `${t.icon} ${t.place || t.name} – ${n} feladat`);
 }
 // 🩹 Ismétlő kör: a csomag hibás / ismétlésre váró feladataiból (PACK.review). A kör hossza a szabad
 // gyakorláséval azonos (a szülő állítja), de legfeljebb annyi, ahány ismétlendő feladat van.
 export function startReview() {
   const u = cur(), R = C.pack.review; if (!R) return;
-  const n = Math.min(R.count(u), freeSize());
+  const allowed = openTopics(u);
+  const n = Math.min(R.count(u, allowed), freeSize());
   if (!n) return toast("Nincs mit ismételni – ügyes vagy! 🎉");
-  const plan = R.plan(u, n, C.rng, openTopics(u));
+  const plan = R.plan(u, n, C.rng, allowed);
   if (!plan.length) return toast("🔒 Az ismétlendő feladatok most le vannak zárva.");
-  disposeAnswer();
-  S = { mode: "review", plan, idx: 0, res: [], combo: 0 };
-  show("scr-play"); $("play-title").textContent = `🩹 Ismétlő kör – ${plan.length} feladat`;
-  nextTask();
+  beginRound({ mode: "review", plan, idx: 0, res: [], combo: 0 }, `🩹 Javító küldetés – ${plan.length} feladat`);
 }
 function reviewEnd(ok, all) {
-  const R = C.pack.review, left = R ? R.count(cur()) : 0, flawless = ok === all;
+  const R = C.pack.review, left = R ? R.count(cur(), openTopics(cur())) : 0, flawless = ok === all;
   if (flawless) confetti();
   modal((box, close) => {
     box.classList.add("celebrate");
@@ -96,7 +128,7 @@ function nextTask() {
   }
   catch (error) { console.error(error); toast("A feladat nem tölthető be. Az eredményeid megmaradtak."); goHome(); return; }
   item.sub = task.sub;   // a terv is megjegyzi (ikerfeladathoz)
-  Object.assign(S, { task, item, twin: !!item.twin, tries: 0, helps: 0, helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
+  Object.assign(S, { task, item, player: cur(), twin: !!item.twin, tries: 0, helps: 0, learningAid: false, learningId: learningKey(C.pack, task), helpShown: 0, helpCap: 0, t0: Date.now(), phase: "answer", firstWrong: null, onNext: null, ui: null, claimRecord: createRecordGate() });
   try { renderTask(); }
   catch (error) { console.error(error); toast("A feladat felülete hibás; nem számoltam el eredményt."); goHome(); }
 }
@@ -132,6 +164,7 @@ function renderTask() {
     },
     toast: (...args) => { if (active()) toast(...args); },
     useHelp: () => { if (answering()) S.helps = (S.helps || 0) + 1; },
+    useLearningAid: () => { if (answering()) S.learningAid = true; },
   });
   setActions(S.ui.auto ? [] : [btn("primary big", "Ellenőrzés ✔", submit)]);
   if (stepHelpOn()) S.helpCap = shCap(helpList(t).length + 1, shState(cur(), t.topic));
@@ -180,6 +213,7 @@ function record(r, v) {
     else if (sh === "all") toast("💡 Szuper! A súgó újra minden lépést mutat.", 3500);
   }
   const ev = { pts: sc.pts, combo: S.combo, pack: C.pack.record(u, t, r), badges: checkBadges(u, [...COMMON_BADGES, ...(C.pack.badges || [])]), bigHit: false };
+  ev.improved = noteLearning(u, S.learningId, r, S.helps > 0 || S.learningAid);
   if (r >= 1) ev.bigHit = addCorrect(u, P.bigGoal);   // helyes válasz (elsőre vagy tipp után) a nagy cél felé
   return ev;
 }
@@ -189,21 +223,22 @@ function correct() {
   S.phase = "done"; helpBadge();
   S.ui.markRight();
   const ev = record(rr, rr === 2 ? S.firstWrong : null);
-  S.res.push(rr); S.idx++;
+  S.res.push(rr); S.idx++; keepResume();
   save(); renderTop(); renderDots();
-  const praise = rr === 1 ? PRAISE()[C.rng.int(0, PRAISE().length - 1)] : "Javítottad! ✔️";
-  $("side-body").innerHTML = `<div class="fb ok"><div class="fb-title">${praise}</div>${rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(t.correctText)}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ${G().pointsIcon}</b>${ev.combo >= 3 && rr === 1 ? `<br>🔥 ${ev.combo}. elsőre jó egymás után!` : ""}${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
+  // 🌱 fejlődésjelzés: a dicséret helyén (pont, jelvény nem jár érte)
+  const praise = ev.improved ? IMPROVED_TITLE : rr === 1 ? PRAISE()[C.rng.int(0, PRAISE().length - 1)] : "Javítottad! ✔️";
+  $("side-body").innerHTML = `<div class="fb ok${ev.improved ? " improved" : ""}"><div class="fb-title">${praise}</div>${ev.improved ? IMPROVED_TEXT : rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(t.correctText)}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ${G().pointsIcon}</b>${ev.combo >= 3 && rr === 1 ? `<br>🔥 ${ev.combo}. elsőre jó egymás után!` : ""}${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
   if (rr === 2) $("side-body").append(btn("secondary", "👀 Megnézem a megoldást", () => { $("side-body").append(stepsAll(t)); }));
-  if (C.tts) speak(praise);
+  if (C.tts) speak(ev.improved ? `Fejlődtél! ${IMPROVED_TEXT}` : praise);
   afterEvents(ev);
-  nextButton(rr === 1);
+  nextButton(rr === 1 && !ev.improved);
 }
 function explain(v) {
   const t = S.task;
   S.phase = "explain"; helpBadge();
   S.ui.lock();
   const ev = record(0, v);
-  S.res.push(0); S.idx++;
+  S.res.push(0); S.idx++; keepResume();
   save(); renderTop(); renderDots();
   const why = t.why(v);
   const sb = $("side-body");
@@ -296,6 +331,7 @@ function takeGather() {
   return Object.entries(g).map(([k, n]) => (T[k] ? T[k](n) : "")).filter(Boolean).join(" ");
 }
 function endRound() {
+  const u0 = cur(); if (u0 && u0.resume) { u0.resume = null; save(); }
   C.cloud.checkpoint("home");   // kör vége: a „főmenübe lépéskor” módban is felmegy
   const gt = takeGather();
   if (gt) { confetti(); setTimeout(() => toast(gt, 5000), 600); }
@@ -316,7 +352,12 @@ function endRound() {
 }
 export function goHome() {
   if ("speechSynthesis" in window) speechSynthesis.cancel();
-  if (S) { disposeAnswer(); const gt = takeGather(); if (gt) toast(gt, 5000); }   // félbehagyott kör: az addig gyűjtött is látsszon
+  if (S) {
+    if (S.phase === "answer" && S.learningId && (S.tries > 0 || S.helps > 0 || S.learningAid) && S.player === cur()) {
+      noteLearning(cur(), S.learningId, 0, true); save();
+    }
+    disposeAnswer(); const gt = takeGather(); if (gt) toast(gt, 5000);
+  }   // félbehagyott kör: az addig gyűjtött is látsszon
   S = null; helpBadge(); show("scr-home"); renderTop(); renderHome();
   C.cloud.checkpoint("home"); maybeAskDevice(); checkHolidays();
   const u = cur();
@@ -327,7 +368,7 @@ export function goHome() {
 // Kezdőlap: Tab / Shift+Tab a küldetés gomb, a nyitható adventi ablak, a rangsáv és a témák között; F1 súgó
 export const homeKeys = {
   id: "home",
-  items: () => [$("btn-mission"), ...document.querySelectorAll("#advent .aw-today, #advent .aw-makeup"), $("rankbox"), ...document.querySelectorAll("#map button.tcard")],
+  items: () => [...document.querySelectorAll("#home-offers button"), $("btn-mission"), ...document.querySelectorAll("#home-room button"), ...document.querySelectorAll("#advent .aw-today, #advent .aw-makeup"), $("rankbox"), ...document.querySelectorAll("#map button.tcard")],
   onF1: () => openHelp(),
 };
 // Gyakorlás: Enter = Tovább (ha már válaszolt, és nem egy gombon áll); Esc = főmenü; F1 = a téma súgója
@@ -397,6 +438,7 @@ function helpBadge() {
   b.title = on ? `Súgó (F1) – még ${left} lépés` : "Súgó (F1)";
 }
 // true: lekezelte (feladat közben, bekapcsolt súgónál); false: a megszokott témaleírás jöjjön
+export function markLearningAid() { if (S?.phase === "answer") S.learningAid = true; }
 export function stepHelpPress() {
   if (!stepHelpOn() || S.phase !== "answer") return false;
   if (S.helpShown < S.helpCap) { S.helpShown++; S.helps = (S.helps || 0) + 1; }

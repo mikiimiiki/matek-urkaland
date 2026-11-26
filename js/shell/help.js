@@ -2,7 +2,7 @@
 import { $, el, btn, escHtml as esc } from "../core/dom.js";
 import { modal } from "../core/modal.js";
 import { C, G } from "./ctx.js";
-import { round, startFree, stepHelpPress } from "./play.js";
+import { round, startFree, stepHelpPress, markLearningAid } from "./play.js";
 import { freeSize } from "./home.js";
 
 export const openTopicHelp = id => topicHelp(id, false);
@@ -35,7 +35,7 @@ function overviewHelp() {
 }
 export function openHelp() {
   const S = round();
-  if ($("scr-play").classList.contains("on") && S && S.task) { if (stepHelpPress()) return; return topicHelp(S.task.topic, false); }
+  if ($("scr-play").classList.contains("on") && S && S.task) { if (stepHelpPress()) return; markLearningAid(); return topicHelp(S.task.topic, false); }
   const a = document.activeElement, t = a && a.dataset && a.dataset.type;
   if ($("scr-home").classList.contains("on") && t) return topicHelp(t, true);
   overviewHelp();

@@ -89,6 +89,7 @@ export function normalizePack(raw) {
   }
   if (typeof raw.makeTask !== 'function') fail(id,'makeTask','függvény szükséges');
   fn(raw.normalizeAnswer,id,'normalizeAnswer');
+  fn(raw.progressKey,id,'progressKey');
   const p = {...raw, id, contractVersion:1, version:raw.version ?? 'legacy', legacy,
     topics, levels:raw.levels ?? {count:1,mode:'manual'},
     settings:array(raw.settings,id,'settings'), badges:array(raw.badges,id,'badges'),
@@ -138,7 +139,8 @@ export function normalizePack(raw) {
   if (raw.review !== undefined) {
     if (!object(raw.review) || typeof raw.review.count !== 'function' || typeof raw.review.plan !== 'function') fail(id,'review','count és plan függvény szükséges');
     const review=raw.review;
-    p.review={...review,count:u=>review.count.call(review,u),plan:(u,n,rng,allowed)=>allowed && !allowed.length ? [] : planResult(review.plan.call(review,u,n,rng,allowed),allowed)};
+    // count(u, allowed): a nyitott témákban ténylegesen ismételhető elemek száma (allowed nélkül: az összes)
+    p.review={...review,count:(u,allowed)=>review.count.call(review,u,allowed),plan:(u,n,rng,allowed)=>allowed && !allowed.length ? [] : planResult(review.plan.call(review,u,n,rng,allowed),allowed)};
   }
   p.makeTask=(item,rng,u) => {
     if (!object(item) || !seen.has(item.topic)) fail(id,'makeTask.item','ismert téma szükséges');

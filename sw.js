@@ -1,10 +1,12 @@
 // ===== Service worker: offline működés =====
 // Az app fájljait gyorsítótárba tesszük; frissítéskor a VERSION-t növeld, hogy az új változat betöltődjön.
-const VERSION = "urkaland-v32";
+const VERSION = "urkaland-v33";
 const SHELL = [
   "./", "index.html", "css/style.css", "manifest.webmanifest", "icon.svg",
   "js/core/pack-contract.js",
   "js/core/answers.js",
+  "js/core/learning-feedback.js",
+  "js/core/room.js",
   "js/core/answer-ui.js",
   "js/core/answer-spec.js",
   "js/core/tile-ui.js",
@@ -74,6 +76,7 @@ const SHELL = [
   "js/shell/index.js",
   "js/shell/parent-tabs.js",
   "js/shell/play.js",
+  "js/shell/room-ui.js",
   "js/shell/players.js",
   "js/shell/settings-defs.js",
   "js/shell/user.js",

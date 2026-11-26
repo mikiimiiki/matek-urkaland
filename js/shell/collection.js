@@ -7,6 +7,7 @@ import { dayNum, dateKey } from "../core/dates.js";
 import { streakNow } from "../core/dailygoal.js";
 import { COMMON_BADGES } from "../core/badges.js";
 import { C, G, cur, saveUser, confetti, unlocked, look, itemIcon } from "./ctx.js";
+import { roomTab, resetRoomSelection } from "./room-ui.js";
 
 let wardrobeKind = "av", api = null;
 
@@ -28,11 +29,13 @@ export function openCollection(tab, kind) {
   if (!cur()) return;
   if (kind) wardrobeKind = kind;
   if (api) { api.close && api.close(); }
+  resetRoomSelection();
   api = openTabs({
-    id: "collection", title: "", ariaLabel: "Gyűjtemény", // nincs külön cím, csak a fülek és a ✕ startTab: tab,
+    id: "collection", title: "", ariaLabel: "Gyűjtemény", startTab: tab, // nincs külön cím, csak a fülek és a ✕
     tabs: [
       { id: "ranks", icon: "🪜", label: "Ranglétra", help: "A rangod, és hogy melyik rangnál mi nyílik ki.", render: ranksTab },
       { id: "wardrobe", icon: "👕", label: "Gyűjteményem", help: "Kattints egy kinyitott tárgyra, és felveszed.", render: wardrobeTab },
+      { id: "room", icon: "🏠", label: "Saját sarkom", help: "Koppints egy tárgyra, aztán a helyére – így díszítheted a sarkodat.", render: roomTab },
       { id: "results", icon: "📊", label: "Eredményeim", help: "Az utolsó 7 nap, a témák és a jelvényeid.", render: resultsTab },
       ...(C.pack.collectionTabs || []).map(t => ({ ...t, render: (box, ctx) => t.render(box, { ...ctx, user: cur() }) })),
     ],

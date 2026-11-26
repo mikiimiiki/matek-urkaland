@@ -72,6 +72,8 @@ export const PACK = {
     };
   },
   // 🩹 Ismétlő kör: az elrontott feladatok pontosan ugyanúgy (a kör hossza a keret beállításából jön)
+  // 🌱 fejlődésjelzés: ugyanaz a feladat = ugyanaz a típus, altípus, szint és kezdőérték (az ismétlő kör így hozza vissza)
+  progressKey: t => `${t.topic}|${t.sub}|${t.level}|${t.seed}`,
   review: { unit: "elrontott feladat", count: reviewCount, plan: (u, n, rng, allowed) => planReview(u, n, rng, allowed) },
   record: (u, task, r) => {
     reviewNote(u, task, r);

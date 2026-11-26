@@ -48,7 +48,7 @@ export function tilesUI(box, io, { word, clueText, arrange, isVowel }) {
     draw(); if (full()) io.submit();
   }
   const bar = el("div", "help-bar");
-  const hSyn = button("help-btn", "💡 Jelentés", () => { if (!live()) return; clue.style.display = "block"; hSyn.disabled = true; });
+  const hSyn = button("help-btn", "💡 Jelentés", () => { if (!live()) return; io.useLearningAid?.(); clue.style.display = "block"; hSyn.disabled = true; });
   const hV = button("help-btn pay", "🅰️ Magánhangzók", () => { if (!live()) return; io.useHelp(); hV.disabled = hE.disabled = true; place(p => isVowel(letters[p])); });
   const hE = button("help-btn pay", "↔️ Első és utolsó betű", () => { if (!live()) return; io.useHelp(); hV.disabled = hE.disabled = true; place(p => p === 0 || p === letters.length - 1); });
   hV.title = hE.title = "Segítség – kevesebb pontot ér";

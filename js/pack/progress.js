@@ -78,7 +78,7 @@ export function reviewNote(u, task, r) {
   if (r === 1) { if (i >= 0) L.splice(i, 1); return; }
   if (r === 0 && i < 0) { L.push({ topic: task.topic, sub: task.sub, level: task.level, seed: task.seed }); if (L.length > REVIEW_MAX) L.splice(0, L.length - REVIEW_MAX); }
 }
-export const reviewCount = u => reviewList(u).filter(x => typeById(x.topic)).length;
+export const reviewCount = (u, allowed) => reviewList(u).filter(x => typeById(x.topic) && (!allowed || allowed.includes(x.topic))).length;
 export function planReview(u, n, rng, allowed) {
   return rng.shuffle(reviewList(u).filter(x => typeById(x.topic) && (!allowed || allowed.includes(x.topic)))).slice(0, n)
     .map(x => ({ topic: x.topic, sub: x.sub, level: x.level, seed: x.seed }));
