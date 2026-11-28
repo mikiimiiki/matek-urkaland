@@ -1,6 +1,7 @@
 // ===== T13 – Szabálykeresés =====
 // A felvételi mintái: X–Y táblázat szabállyal (hiányzó szám pótlása, melyik szabály illik minden oszlophoz,
 // szabály kitalálása), „minden nap 3-mal többet” sorozatok (n-edik tag, hányadik, összeg), számsorozatok.
+import { aAz } from "../../core/dom.js";
 import { fmt, list, numVal, article } from "../util.js";
 
 const DAYS = ["hétfő", "kedd", "szerda", "csütörtök", "péntek", "szombat", "vasárnap"];
@@ -103,7 +104,7 @@ function harom(rng) {
       opts.map(o => `${o.ok ? "✅" : "❌"} <b>${o.txt}</b> – ${o.ok ? "ugyanaz a szabály másképp felírva" : "ez nem stimmel (próbáld ki: " + o.txt.split(" = ")[0] + " nem jön ki)"}`).join("<br>"),
       `A jók: <b class="big">${list(correct.map(i => opts[i].txt))}</b>`,
     ],
-    why: ks => { const badPick = ks.find(k => !opts[k].ok); return badPick != null ? `A(z) „${opts[badPick].txt}” nem jó: helyettesítsd be az első oszlop számait, és nézd meg!` : "Van még olyan szabály, ami ugyanezt fejezi ki másképp felírva!"; },
+    why: ks => { const badPick = ks.find(k => !opts[k].ok); return badPick != null ? `${aAz(opts[badPick].txt, true)} „${opts[badPick].txt}” nem jó: helyettesítsd be az első oszlop számait, és nézd meg!` : "Van még olyan szabály, ami ugyanezt fejezi ki másképp felírva!"; },
   };
 }
 

@@ -1,5 +1,5 @@
 // ===== Kezdőlap és felső sáv =====
-import { $, el, btn, toast, escHtml as esc } from "../core/dom.js";
+import { $, el, btn, toast, escHtml as esc, aAz } from "../core/dom.js";
 import * as keys from "../core/keys.js";
 import { missionProgress, streakNow, shieldAvailable, bigProgress } from "../core/dailygoal.js";
 import { C, G, cur, prefs, applyLook, itemIcon, rewardProgress, rewardKinds } from "./ctx.js";
@@ -80,7 +80,7 @@ export function renderHome() {
   // rang
   const R = g.ranks, rk = R.rankOf(u.pts);
   $("rank-name").textContent = `${g.mascot} ${rk.name} (${rk.n}/${rk.total})`;
-  $("rank-next").innerHTML = rk.next ? `még <b>${rk.need} ${g.pointsIcon}</b> a(z) „${esc(rk.next)}” rangig – kb. ${R.daysTo(u, rk.need)} nap <span class="rank-peek">· 🎁 ${rk.nextRank.unlocks.map(itemIcon).join(" ")}</span>` : "Elérted a legmagasabb rangot! 🌟";
+  $("rank-next").innerHTML = rk.next ? `még <b>${rk.need} ${g.pointsIcon}</b> ${aAz(esc(rk.next))} „${esc(rk.next)}” rangig – kb. ${R.daysTo(u, rk.need)} nap <span class="rank-peek">· 🎁 ${rk.nextRank.unlocks.map(itemIcon).join(" ")}</span>` : "Elérted a legmagasabb rangot! 🌟";
   $("rank-bar").style.width = Math.round(rk.pct * 100) + "%";
   // következő szülői jutalom
   const rb = $("reward-box"), rws = (u.rewards || []).map(r => ({ r, p: rewardProgress(u, r) })).filter(x => !x.p.claimed);

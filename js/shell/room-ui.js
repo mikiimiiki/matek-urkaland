@@ -3,7 +3,7 @@
 // Díszíteni a Gyűjtemény „Saját sarkom” fülén lehet.
 // Csak az elrendezés mentődik (u.room: 3 tárgyazonosító, üres hely = ""); a gyűjtemény és a felszerelés nem változik.
 // Koppintás: tárgy → hely (vagy hely → tárgy); a ✕ leveszi a tárgyat. Billentyűzettel: Tab + Enter.
-import { $, el, btn, escHtml as esc } from "../core/dom.js";
+import { $, el, btn, escHtml as esc, aAz } from "../core/dom.js";
 import { roomLayout, placeInRoom, ROOM_SLOTS } from "../core/room.js";
 import { C, G, cur, itemIcon, saveUser, unlocked, applyLook } from "./ctx.js";
 
@@ -90,7 +90,7 @@ export function roomTab(box, ctx) {
   box.append(slots);
   if (!items.size) {
     const R = G().ranks, rk = R.rankOf(u.pts);
-    box.append(el("p", "room-empty", rk.next ? `Még nincs kinyitott tárgyad. Az elsőt a(z) „${esc(rk.next)}” rangnál kapod – még <b>${rk.need} ${G().pointsIcon}</b>!` : "Még nincs kitehető tárgyad."));
+    box.append(el("p", "room-empty", rk.next ? `Még nincs kinyitott tárgyad. Az elsőt ${aAz(esc(rk.next))} „${esc(rk.next)}” rangnál kapod – még <b>${rk.need} ${G().pointsIcon}</b>!` : "Még nincs kitehető tárgyad."));
   } else {
     box.append(el("h4", "psub", "A tárgyaid"));
     const grid = el("div", "room-items");

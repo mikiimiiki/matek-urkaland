@@ -1,5 +1,6 @@
 // ===== T3 – Mértékegységek =====
 // Átváltás (hossz, tömeg, űrtartalom, idő), vegyes alak, pótlás, mértékegység becslése.
+import { aAz } from "../../core/dom.js";
 import { fmt, svg, txt, rect, arrowDefs, article } from "../util.js";
 
 // Mértékegység-családok: a lépcső fentről lefelé (nagyobbtól a kisebbig), alapegységben kifejezve
@@ -261,7 +262,7 @@ function becsles(rng, lvl) {
       expl,
       `A jó válasz: <b class="big">${s.replace("…", u)}</b>`,
     ],
-    why: i => { const w = options[i]; return w && UNIT_FAMILY[w] !== UNIT_FAMILY[u] ? `A(z) ${w} nem ${{ h: "hosszúság", t: "tömeg", u: "űrtartalom", i: "idő" }[UNIT_FAMILY[u]]}mérték – itt ${{ h: "hosszúságot", t: "tömeget", u: "űrtartalmat", i: "időt" }[UNIT_FAMILY[u]]} mérünk.` : null; },
+    why: i => { const w = options[i]; return w && UNIT_FAMILY[w] !== UNIT_FAMILY[u] ? `${aAz(w, true)} ${w} nem ${{ h: "hosszúság", t: "tömeg", u: "űrtartalom", i: "idő" }[UNIT_FAMILY[u]]}mérték – itt ${{ h: "hosszúságot", t: "tömeget", u: "űrtartalmat", i: "időt" }[UNIT_FAMILY[u]]} mérünk.` : null; },
   };
 }
 

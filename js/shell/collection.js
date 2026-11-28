@@ -1,5 +1,5 @@
 // ===== 🎒 Gyűjtemény: ranglétra, szekrény, eredményeim + a csomag saját fülei =====
-import { el, btn, toast, escHtml as esc } from "../core/dom.js";
+import { el, btn, toast, escHtml as esc, aAz } from "../core/dom.js";
 import { modal } from "../core/modal.js";
 import { openTabs } from "../core/tabs.js";
 import { histAgg, pctOf, compare } from "../core/progress.js";
@@ -45,7 +45,7 @@ export function openCollection(tab, kind) {
 
 function ranksTab(box) {
   const g = G(), u = cur(), R = g.ranks, rk = R.rankOf(u.pts), cat = g.catalog;
-  box.append(el("div", "rk-head", `<div class="rk-big">${u.avatar}</div><div style="flex:1"><h3>${g.mascot} ${esc(rk.name)} <span class="soft small">(${rk.n}/${rk.total})</span></h3><div class="bar"><i style="width:${Math.round(rk.pct * 100)}%"></i></div><p class="small">${rk.next ? `Még <b>${rk.need} ${g.pointsIcon}</b> a(z) „${esc(rk.next)}” rangig – <b>kb. ${R.daysTo(u, rk.need)} nap</b> gyakorlás (az utolsó 7 nap tempójával).` : "Elérted a legmagasabb rangot! " + (g.legendLine || "🌟")}</p></div>`));
+  box.append(el("div", "rk-head", `<div class="rk-big">${u.avatar}</div><div style="flex:1"><h3>${g.mascot} ${esc(rk.name)} <span class="soft small">(${rk.n}/${rk.total})</span></h3><div class="bar"><i style="width:${Math.round(rk.pct * 100)}%"></i></div><p class="small">${rk.next ? `Még <b>${rk.need} ${g.pointsIcon}</b> ${aAz(esc(rk.next))} „${esc(rk.next)}” rangig – <b>kb. ${R.daysTo(u, rk.need)} nap</b> gyakorlás (az utolsó 7 nap tempójával).` : "Elérted a legmagasabb rangot! " + (g.legendLine || "🌟")}</p></div>`));
   const lad = el("div", "ladder");
   R.RANKS.forEach((Q, i) => {
     const st = i <= rk.i ? "done" : i === rk.i + 1 ? "next" : "locked";

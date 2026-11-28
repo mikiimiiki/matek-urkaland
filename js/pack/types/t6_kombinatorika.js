@@ -3,6 +3,7 @@
 // az összeset – a rossz lehetőségért (a felvételihez hasonlóan) figyelmeztetést kap.
 // Altípusok: választás (sorrend nem számít), sorba rendezés feltételekkel, öltöztetés (szorzási szabály),
 // útvonalak egy ábrán, számok kártyákból, „hányféleképpen?” (csak a darabszám).
+import { aAz } from "../../core/dom.js";
 import { svg, txt, line, circle, COLORS, list, esc } from "../util.js";
 
 // ---- Közös segédek ----
@@ -68,7 +69,7 @@ function valasztas(rng, lvl) {
         rules.push({ ok: s => !(s.includes(a) && s.includes(b)), why: () => `${a} és ${b} együtt van benne, pedig az nem szabad` });
       } else { // egy csoportból legfeljebb egy
         const grp = rng.sample(keys, 3);
-        extra += ` A(z) ${list(grp)} közül <b>legfeljebb egyet</b> választhat.`;
+        extra += ` ${aAz(list(grp), true)} ${list(grp)} közül <b>legfeljebb egyet</b> választhat.`;
         rules.push({ ok: s => s.filter(x => grp.includes(x)).length <= 1, why: () => `${list(grp)} közül egynél több van benne` });
       }
     }

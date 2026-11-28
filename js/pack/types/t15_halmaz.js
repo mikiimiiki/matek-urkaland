@@ -1,6 +1,7 @@
 // ===== T15 – Halmazábra (Venn-diagram) =====
 // A felvételi mintái: leolvasás pöttyös halmazábráról (kinek van kutyája, macskája – 2025/1 #8),
 // számok elhelyezése két tulajdonság szerint (2025/2 #5), szöveges halmazfeladat.
+import { aAz } from "../../core/dom.js";
 import { svg, txt, circle, rect, digitSum, numVal } from "../util.js";
 
 // Két kör egy téglalapban. regions: { a: csak A, ab: közös, b: csak B, o: kívül } – szám vagy tömb (feliratok)
@@ -110,7 +111,7 @@ function szoveges(rng, lvl) {
     ? `Egy ${N} fős osztályban ${a} tanuló jár ${vA}, ${b} tanuló ${vB}, és ${none} tanuló egyikre sem jár.`
     : `Egy ${N} fős osztályban ${a} tanuló jár ${vA}, ${b} tanuló ${vB}, és ${both} tanuló mindkettőre jár.`;
   const Q = {
-    csakA: { q: `Hány tanuló jár csak ${vA}?`, v: a - both, ex: [`A(z) „${A}” körben ${a} tanuló van, de ebből ${both} mindkettőre jár.`, `Csak ${vA}: ${a} − ${both} = <b class="big">${a - both}</b>`], bad: a, badMsg: `Ebben a ${a} tanulóban benne vannak azok is, akik mindkettőre járnak – őket le kell vonni!` },
+    csakA: { q: `Hány tanuló jár csak ${vA}?`, v: a - both, ex: [`${aAz(A, true)} „${A}” körben ${a} tanuló van, de ebből ${both} mindkettőre jár.`, `Csak ${vA}: ${a} − ${both} = <b class="big">${a - both}</b>`], bad: a, badMsg: `Ebben a ${a} tanulóban benne vannak azok is, akik mindkettőre járnak – őket le kell vonni!` },
     egyiksem: { q: "Hány tanuló nem jár egyikre sem?", v: none, ex: [`Legalább az egyikre jár: ${a} + ${b} − ${both} = <b>${a + b - both}</b> (a mindkettőre járókat egyszer kell számolni!).`, `Egyikre sem: ${N} − ${a + b - both} = <b class="big">${none}</b>`], bad: N - a - b, badMsg: `A mindkettőre járó ${both} tanulót kétszer vontad le – őket csak egyszer kell számolni!` },
     legalabb: { q: "Hány tanuló jár legalább az egyikre?", v: a + b - both, ex: [`${a} + ${b} = ${a + b}, de így a mindkettőre járó ${both} tanulót kétszer számoltuk.`, `${a + b} − ${both} = <b class="big">${a + b - both}</b>`], bad: a + b, badMsg: "A mindkettőre járókat kétszer számoltad – egyszer le kell vonni őket!" },
     mindketto: { q: "Hány tanuló jár mindkettőre?", v: both, ex: [`Legalább az egyikre jár: ${N} − ${none} = <b>${N - none}</b>.`, `${a} + ${b} = ${a + b}, ez ${numVal(a + b - (N - none))} több, mint ${N - none} – ennyi tanulót számoltunk kétszer, ők járnak mindkettőre: <b class="big">${both}</b>`] },

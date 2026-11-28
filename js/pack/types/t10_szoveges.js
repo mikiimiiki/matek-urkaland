@@ -2,6 +2,7 @@
 // A 2022–2026-os feladatlapok visszatérő mintái: összeg és különbség, „többször annyi”, életkor,
 // csomagolási lánc, „fák között eggyel kevesebb köz van”, lépcsőzés, csere, mérleg.
 // A magyarázatok szakaszos ábrát (szalagmodellt) és lépésenkénti számolást mutatnak.
+import { aAz } from "../../core/dom.js";
 import { fmt, svg, txt, rect, line, circle, numVal, article } from "../util.js";
 
 const NAMES = ["Panka", "Zoli", "Peti", "Anna", "Bence", "Lili", "Máté", "Réka", "Sára", "Zoé", "Dani", "Emma", "Kata", "Marci"];
@@ -83,9 +84,9 @@ function tobbszor(rng, lvl) {
     sub: "tobbszor",
     q: `${T.ctx} ${cap(a.bol)} ${fmt(base)} darab volt, ${b.bol} <b>${kw} annyi</b>.<p><b>Hány darab volt összesen?</b></p>`,
     ans: { kind: "num", value: total, unit: "db" },
-    hint: `Először számold ki, hány ${b.n} volt (${kw} annyi), aztán add hozzá a(z) ${a.pl} számát is!`,
+    hint: `Először számold ki, hány ${b.n} volt (${kw} annyi), aztán add hozzá ${aAz(a.pl)} ${a.pl} számát is!`,
     steps: [`${cap(kw)} annyi = ${k} egyforma rész:` + pic, `${cap(b.pl)}: ${fmt(base)} · ${k} = <b>${fmt(big)}</b>`, `Összesen: ${fmt(base)} + ${fmt(big)} = <b class="big">${fmt(total)}</b>`],
-    why: v => v === big ? `Ez csak a(z) ${b.pl} száma – a kérdés az összeset kéri, a ${fmt(base)}-t is hozzá kell adni!` : v === base + k ? `A „${kw} annyi” szorzást jelent, nem hozzáadást: ${fmt(base)} · ${k}.` : null,
+    why: v => v === big ? `Ez csak ${aAz(b.pl)} ${b.pl} száma – a kérdés az összeset kéri, a ${fmt(base)}-t is hozzá kell adni!` : v === base + k ? `A „${kw} annyi” szorzást jelent, nem hozzáadást: ${fmt(base)} · ${k}.` : null,
   };
   if (mode === "part") return {
     sub: "tobbszor",
@@ -93,7 +94,7 @@ function tobbszor(rng, lvl) {
     ans: { kind: "num", value: base, unit: "db" },
     hint: `Rajzold le: ${a.n} 1 rész, ${b.n} ${k} rész. Hány rész ez összesen?`,
     steps: [`${cap(a.n)}: 1 rész, ${b.n}: ${k} rész → összesen <b>${k + 1} egyforma rész</b>.` + pic, `Egy rész: ${fmt(total)} : ${k + 1} = <b>${fmt(base)}</b>`, `${cap(a.n)}: <b class="big">${fmt(base)}</b> (${b.n}: ${fmt(big)})`],
-    why: v => v === total / k ? `Nem ${k}, hanem ${k + 1} részre kell osztani – a(z) ${a.n} is egy rész!` : v === big ? `Ez a(z) ${b.pl} száma.` : null,
+    why: v => v === total / k ? `Nem ${k}, hanem ${k + 1} részre kell osztani – ${aAz(a.n)} ${a.n} is egy rész!` : v === big ? `Ez ${aAz(b.pl)} ${b.pl} száma.` : null,
   };
   return {
     sub: "tobbszor",
@@ -169,7 +170,7 @@ function lanc(rng, lvl) {
     ans: { kind: "num", value: m * f[2] * f[1], unit: it[1] },
     hint: `Először: hány ${it[1]} van 1 ${C.in[3]}? Aztán szorozd meg ennyivel: ${m}.`,
     steps: [chainSvg, `1 ${C.in[3]}: ${f[2]} · ${f[1]} = <b>${f[2] * f[1]}</b> ${it[1]}`, `${m} ${C.in[3]}: ${m} · ${f[2] * f[1]} = <b class="big">${fmt(m * f[2] * f[1])}</b> ${it[1]}`],
-    why: v => v === m * f[2] ? `Ez még csak a(z) ${C.pl[2]} száma – még egy lépést szorozni kell!` : null,
+    why: v => v === m * f[2] ? `Ez még csak ${aAz(C.pl[2])} ${C.pl[2]} száma – még egy lépést szorozni kell!` : null,
   }; }
   const boxes = rng.int(2, 9) * f[2];
   return {
