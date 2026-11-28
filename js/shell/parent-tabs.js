@@ -9,7 +9,7 @@ import { dayNum, dateKey } from "../core/dates.js";
 import { monthKey } from "../core/device.js";
 import { multOf } from "../core/dailygoal.js";
 import { improvementsIn } from "../core/learning-feedback.js";
-import { voiceSection } from "./voice-ui.js";
+import { voiceRow } from "./voice-ui.js";
 import { GROUPS } from "./settings-defs.js";
 
 // Bájtok emberi formában
@@ -115,6 +115,8 @@ export function parentTabs(app) {
       box.append(el("h4", "psub", `${gr.title} – ${escHtml(u.name)}`));
       const form = el("div", "set-form"); box.append(form);
       renderForm(form, gd, get, set);
+      // 🗣️ felolvasó hang: közvetlenül a „Felolvasás alapból bekapcsolva” alatt (eszközönként, nem gyerekenként)
+      const tts = form.querySelector("#set-tts"); if (tts) voiceRow(tts.closest(".set-row"));
       if (gr.id === "goal") goalExtras(box, u, ctx);
     });
     const tools = el("div", "form-row");
@@ -124,7 +126,6 @@ export function parentTabs(app) {
     );
     box.append(tools, el("p", "legend", "Tipp: hétvégére emelheted a célt (pl. 20 perc), hétköznap elég a 15 perc. A változás azonnal mentődik."));
 
-    voiceSection(box);   // 🔊 felolvasó hang (eszközönként, nem gyerekenként)
     box.append(el("h4", "psub", `🎁 Jutalmak – ${escHtml(u.name)}`));
     const list = el("div");
     (u.rewards || []).forEach(r => {
