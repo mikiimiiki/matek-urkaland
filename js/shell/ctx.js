@@ -1,7 +1,7 @@
 // ===== A váz közös állapota és segédei =====
 // C: a játék (GAME), a feladatcsomag (PACK), a beállításleírók, az állapot, a felhő, az eszköz és az aktuális kör.
 // A képernyőmodulok (home, play, players, collection, holidays, …) mind ezt használják.
-import { $ } from "../core/dom.js";
+import { $, speechClean } from "../core/dom.js";
 import { resolve } from "../core/settings.js";
 import { unlockedSet, equipped, applyVars, swapClass } from "../core/cosmetics.js";
 import { activeEvents } from "../core/events.js";
@@ -101,7 +101,10 @@ export function speak(html, lang) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   lang = lang || G().speechLang || "hu-HU";
-  const u = new SpeechSynthesisUtterance((C.pack.speechText || (x => String(x).replace(/<[^>]+>/g, " ")))(html));
+  // emojik és jelek nélkül (a felolvasó ne mondja ki pl. a 📏 / 🧠 / ⭐ jelek nevét)
+  const text = speechClean((C.pack.speechText || (x => String(x)))(html));
+  if (!text) return;
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = lang; u.rate = 0.95;
   const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(lang.slice(0, 2))); if (v) u.voice = v;
   speechSynthesis.speak(u);
