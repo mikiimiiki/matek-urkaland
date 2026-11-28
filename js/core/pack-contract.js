@@ -37,6 +37,7 @@ export function normalizeTask(raw, item, pack, rng) {
   const correctText = raw.correctText ?? (solution !== undefined ? text([].concat(solution)[0]) : undefined);
   if (typeof raw.q !== 'string') fail(id, 'task.q', 'szöveg szükséges');
   if (typeof correctText !== 'string') fail(id, 'task.correctText', 'szöveg szükséges (vagy solution)');
+  if (raw.rule !== undefined && typeof raw.rule !== 'string') fail(id, 'task.rule', 'szöveg (HTML) szükséges');
   if (raw.speechLang !== undefined && (typeof raw.speechLang !== 'string' || !/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(raw.speechLang))) fail(id, 'task.speechLang', 'nyelvkód szükséges, pl. "de-DE"');
   const normalize = fn(raw.normalize, id, 'task.normalize', pack.normalizeAnswer || defaultNormalize);
   const userCheck = raw.check || (v => ({ok:[].concat(solution).some(s => sameValue(normalize(s), normalize(v)))}));

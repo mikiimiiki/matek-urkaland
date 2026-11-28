@@ -233,6 +233,8 @@ function correct() {
   // 🌱 fejlődésjelzés: a dicséret helyén (pont, jelvény nem jár érte)
   const praise = ev.improved ? IMPROVED_TITLE : rr === 1 ? PRAISE()[C.rng.int(0, PRAISE().length - 1)] : "Javítottad! ✔️";
   $("side-body").innerHTML = `<div class="fb ok${ev.improved ? " improved" : ""}"><div class="fb-title">${praise}</div>${ev.improved ? IMPROVED_TEXT : rr === 1 ? "Elsőre sikerült!" : `A helyes válasz: <b>${esc(t.correctText)}</b>. A tipp után megtaláltad – ügyes!`} <b>+${ev.pts} ${G().pointsIcon}</b>${ev.combo >= 3 && rr === 1 ? `<br>🔥 ${ev.combo}. elsőre jó egymás után!` : ""}${S.twin ? "<br>🧠 Hibából tanultál – ez a legjobb!" : ""}</div>`;
+  // „Miért?” – a feladat szabálya / magyarázata jó válasz után is (task.rule, elhagyható; pl. „📏 Szabály: …”)
+  if (t.rule) $("side-body").append(el("div", "fb-why", `<b>Miért?</b> ${t.rule}`));
   if (rr === 2) $("side-body").append(btn("secondary", "👀 Megnézem a megoldást", () => { $("side-body").append(stepsAll(t)); }));
   sfx(ev.improved ? "improved" : "ok");
   if (C.tts) speak(ev.improved ? `Fejlődtél! ${IMPROVED_TEXT}` : praise);

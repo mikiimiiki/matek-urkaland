@@ -113,7 +113,7 @@ export function renderHome() {
   // (a 🩹 javító küldetés a „Neked ajánljuk” kártyára került)
   C.pack.topics.forEach(t => {
     const st2 = C.pack.status(u, t.id), locked = bl.includes(t.id);
-    const b2 = btn("tcard" + (locked ? " blocked" : ""), `<div class="orb" style="background:${t.color};--glow:${t.color}">${t.icon}</div><div class="pname">${esc(t.place || t.name)}</div><div class="ptype">${esc(t.name)}</div><div class="pstars">${[1, 2, 3].map(i => `<span class="${st2.stars >= i ? "" : "off"}">⭐</span>`).join("")}</div><div class="plvl">${locked ? "🔒 most szünetel" : esc(st2.label)}</div>`, () => { if (locked) return toast("🔒 Ezt most lezárták, hogy a többire jusson idő. Válassz egy másikat!"); startFree(t.id); });
+    const b2 = btn("tcard" + (locked ? " blocked" : ""), `<div class="orb" style="background:${t.color};--glow:${t.color}">${t.icon}</div><div class="pname">${esc(t.place || t.name)}</div><div class="ptype">${esc(t.tagline || (t.place && t.place !== t.name ? t.name : ""))}</div><div class="pstars">${[1, 2, 3].map(i => `<span class="${st2.stars >= i ? "" : "off"}">⭐</span>`).join("")}</div><div class="plvl">${locked ? "🔒 most szünetel" : esc(st2.label)}</div>`, () => { if (locked) return toast("🔒 Ezt most lezárták, hogy a többire jusson idő. Válassz egy másikat!"); startFree(t.id); });
     b2.dataset.type = t.id; b2.title = `${t.place || t.name} – ${t.name}${locked ? " (lezárva)" : " (Enter: indulás, F1: mi vár itt?)"}`;
     if (locked) b2.setAttribute("aria-disabled", "true");
     map.append(b2);
