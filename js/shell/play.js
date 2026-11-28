@@ -192,6 +192,7 @@ function check() {
   S.tries++;
   if (S.tries === 1) S.firstWrong = v;
   S.ui.markWrong();
+  sfx("wrong");
   // ha a beírás be van kapcsolva, már az első hibánál jön a magyarázat és a beírás (nincs tipp-újrapróba:
   // a helyes alak megmutatása után az újrapróbának nem lenne értelme)
   if (S.tries === 1 && retypeMode(t) === "off") {

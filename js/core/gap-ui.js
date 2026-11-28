@@ -10,7 +10,9 @@ export function gapUI(box, io, { word, start, part, options, input = "choice", e
   const show = el("div", "word-display gap-word");
   const a = el("span"), gap = el("span", "gap"), b = el("span");
   a.textContent = before; b.textContent = after;
-  const blank = "_".repeat(Math.max(2, [...part].length));
+  // üres hiány: csak egy szaggatott aláhúzás (betűnyi széles hely, nem „_” jelek – azok dupla vonalnak látszanának)
+  const n = [...part].length, blank = " ".repeat(n);
+  gap.style.minWidth = `${0.75 * n + 0.4}em`;
   const fill = (v, state) => {
     gap.textContent = v ? v : blank;
     gap.classList.toggle("filled", !!v);
