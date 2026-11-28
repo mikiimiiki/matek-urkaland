@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.13.0",
-  "commit": "0d32376",
-  "datum": "2026-11-26",
-  "ujjlenyomat": "802fbea0bf80d9da91fcb10c9cdc9bd8366c63a6c808dedd7516e2081017e84d",
+  "verzio": "1.14.0",
+  "commit": "42c306c",
+  "datum": "2026-11-28",
+  "ujjlenyomat": "0739cc956b3f8e1611f1486a2123c8fd67fd4169a9a52684ec1fae80352cd830",
   "fajlok": [
     "js/core/answer-spec.js",
     "js/core/answer-ui.js",
@@ -17,6 +17,7 @@
     "js/core/device.js",
     "js/core/dom.js",
     "js/core/events.js",
+    "js/core/gap-ui.js",
     "js/core/keys.js",
     "js/core/learning-feedback.js",
     "js/core/local-save.js",

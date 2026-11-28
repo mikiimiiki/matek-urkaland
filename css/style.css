@@ -536,3 +536,11 @@ body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic 
 .wk-tile span { font-size: 12px; opacity: .8; text-align: center; }
 .wk-ic { font-size: 22px; }
 @media (max-width: 480px) { .wk-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* hiányzó rész (answer kind: "gap") */
+.gap-word { text-align: center; letter-spacing: 1px; font-size: 38px; font-weight: 900; line-height: 1.3; margin: 10px 0; }
+.gap-word .gap { display: inline-block; min-width: 1.4em; border-bottom: 4px dashed var(--pri2); color: var(--pri); padding: 0 4px; margin: 0 1px; }
+.gap-word .gap.filled { border-bottom-style: solid; }
+.gap-word .gap.right { color: var(--ok); border-color: var(--ok); }
+.gap-word .gap.wrong { color: var(--bad); border-color: var(--bad); }
+.gap-opts { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+.gap-inp { max-width: 220px; margin: 8px auto 0; display: block; text-align: center; }
