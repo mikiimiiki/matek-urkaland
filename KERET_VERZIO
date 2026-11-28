@@ -1,9 +1,9 @@
 {
   "keret": "keretrendszer",
-  "verzio": "1.15.2",
-  "commit": "5a61665",
+  "verzio": "1.16.0",
+  "commit": "e03fb76",
   "datum": "2026-11-28",
-  "ujjlenyomat": "97be9f31f00be3f668e8e574a84eafccae2ccd6f75bb0aa8eaa7a0d40de7660d",
+  "ujjlenyomat": "f407c1d8914eabdcb00ad8cbc16f04848a88d184f578bb4972d55fb4a7772f09",
   "fajlok": [
     "js/core/answer-spec.js",
     "js/core/answer-ui.js",
@@ -37,6 +37,7 @@
     "js/core/tab-lease.js",
     "js/core/tabs.js",
     "js/core/tile-ui.js",
+    "js/core/voices.js",
     "js/core/weather.js",
     "js/core/weekly.js",
     "js/shell/cloud-ui.js",
@@ -54,6 +55,7 @@
     "js/shell/room-ui.js",
     "js/shell/settings-defs.js",
     "js/shell/user.js",
+    "js/shell/voice-ui.js",
     "js/shell/weekly-ui.js",
     "css/style.css",
     "tests/keret.test.mjs"

@@ -546,3 +546,6 @@ body.dys, body.dys button, body.dys input { font-family: "OpenDyslexic", "Comic 
 .gap-inp { max-width: 220px; margin: 8px auto 0; display: block; text-align: center; }
 /* „Miért?” sor jó válasz után (task.rule) */
 .fb-why { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--pri-soft); font-size: 15px; line-height: 1.4; }
+/* 🔊 felolvasó hang választó */
+.voice-box .set-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.voice-box select { min-width: 0; max-width: 100%; }

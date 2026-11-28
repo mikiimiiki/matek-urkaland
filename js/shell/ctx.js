@@ -10,6 +10,7 @@ import { dayNum, dateKey, isSimulated } from "../core/dates.js";
 import { snowToday, cachedSnow } from "../core/weather.js";
 import { streakNow } from "../core/dailygoal.js";
 import { playSound } from "../core/sound.js";
+import { pickVoice } from "../core/voices.js";
 
 export const C = { game: null, pack: null, defs: [], state: null, cloud: null, device: null, rng: null, S: null, tts: false, gearApi: null };
 export const G = () => C.game;
@@ -96,6 +97,10 @@ export function confetti() {
 export function sfx(name) { const u = cur(); if (u && prefs(u).sound === false) return; playSound(name); }
 
 // ---- felolvasás ----
+// Felolvasó hang: eszközönként választható (szülői menü), a böngészőben tárolva; alapból női hang, ha van
+const VOICE_KEY = () => `${C.storeKey || (G() && G().storeKey) || "jatek"}_voice`;
+export const voicePref = () => { try { return localStorage.getItem(VOICE_KEY()) || ""; } catch { return ""; } };
+export const setVoicePref = name => { try { if (name) localStorage.setItem(VOICE_KEY(), name); else localStorage.removeItem(VOICE_KEY()); } catch { /* privát mód */ } };
 // lang: a feladat saját nyelve (pl. "de-DE"); alapból a játék nyelve
 export function speak(html, lang) {
   if (!("speechSynthesis" in window)) return;
@@ -106,6 +111,6 @@ export function speak(html, lang) {
   if (!text) return;
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang; u.rate = 0.95;
-  const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(lang.slice(0, 2))); if (v) u.voice = v;
+  const v = pickVoice(speechSynthesis.getVoices(), lang, voicePref()); if (v) u.voice = v;
   speechSynthesis.speak(u);
 }

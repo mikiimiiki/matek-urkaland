@@ -9,6 +9,7 @@ import { dayNum, dateKey } from "../core/dates.js";
 import { monthKey } from "../core/device.js";
 import { multOf } from "../core/dailygoal.js";
 import { improvementsIn } from "../core/learning-feedback.js";
+import { voiceSection } from "./voice-ui.js";
 import { GROUPS } from "./settings-defs.js";
 
 // Bájtok emberi formában
@@ -123,6 +124,7 @@ export function parentTabs(app) {
     );
     box.append(tools, el("p", "legend", "Tipp: hétvégére emelheted a célt (pl. 20 perc), hétköznap elég a 15 perc. A változás azonnal mentődik."));
 
+    voiceSection(box);   // 🔊 felolvasó hang (eszközönként, nem gyerekenként)
     box.append(el("h4", "psub", `🎁 Jutalmak – ${escHtml(u.name)}`));
     const list = el("div");
     (u.rewards || []).forEach(r => {
